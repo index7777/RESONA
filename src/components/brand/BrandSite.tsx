@@ -3,7 +3,7 @@ import { ArrowDown } from 'lucide-react';
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
 const HERO_DESKTOP = asset('brand/resona-hero-desktop-hq.webp');
-const HERO_MOBILE = asset('brand/resona-hero-mobile.webp');
+const HERO_MOBILE = HERO_DESKTOP;
 const HERO_FALLBACK = asset('brand/resona-hero-fallback.svg');
 const INTRO_KEY = 'resona:intro-seen';
 

@@ -20,6 +20,8 @@ import { exportAsset } from './exportContract';
 
 const waves: Waveform[] = ['sine', 'square', 'sawtooth', 'triangle', 'noise'];
 const MAX_DPR = 2.5;
+const ANALYSIS_DEBOUNCE_MS = 200;
+const ATTRIBUTION_DEBOUNCE_MS = 240;
 
 type PendingRepair = { before: AudioMetrics; fix: ReturnType<typeof fixSound>['report'] };
 type CommitOptions = {
@@ -186,24 +188,37 @@ export function App() {
 
   useEffect(() => {
     const run = ++renderRun.current;
-    renderSound(s).then(buffer => {
-      if (run !== renderRun.current) return;
-      lastBuffer.current = buffer;
-      const next = inspectBuffer(buffer);
-      setMetrics(next);
-      const sp = spectrogram(buffer, 192, 96);
-      lastSpectrogram.current = sp;
-      setBursts(sp.bursts);
-      redrawVisuals();
-      attributeLayers(s, sp.bursts).then(a => {
-        if (run === renderRun.current) setAttribution(a);
+    let attributionTimer = 0;
+    const analysisTimer = window.setTimeout(() => {
+      renderSound(s).then(buffer => {
+        if (run !== renderRun.current) return;
+        lastBuffer.current = buffer;
+        const next = inspectBuffer(buffer);
+        setMetrics(next);
+        const sp = spectrogram(buffer, 192, 96);
+        lastSpectrogram.current = sp;
+        setBursts(sp.bursts);
+        redrawVisuals();
+
+        attributionTimer = window.setTimeout(() => {
+          if (run !== renderRun.current) return;
+          attributeLayers(s, sp.bursts).then(a => {
+            if (run === renderRun.current) setAttribution(a);
+          });
+        }, ATTRIBUTION_DEBOUNCE_MS);
+
+        const repair = pendingRepair.current;
+        if (repair) {
+          setReport(iterationReport('sound', s.seed, repair.before, next, repair.fix));
+          pendingRepair.current = null;
+        }
       });
-      const repair = pendingRepair.current;
-      if (repair) {
-        setReport(iterationReport('sound', s.seed, repair.before, next, repair.fix));
-        pendingRepair.current = null;
-      }
-    });
+    }, ANALYSIS_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(analysisTimer);
+      window.clearTimeout(attributionTimer);
+    };
   }, [s]);
 
   useEffect(() => () => {
@@ -368,6 +383,6 @@ export function App() {
 
       <div className="panel code-panel"><div className="panel-title"><span>RESONA DSL</span><small>editable agent contract</small></div><textarea value={dsl} onChange={e => setDsl(e.target.value)} /><div className="dsl-actions"><button onClick={apply}><Upload size={14} />Load JSON</button><button onClick={async () => { await navigator.clipboard.writeText(dsl); setStatus('DSL copied'); }}><Copy size={14} />Copy JSON</button></div></div></section></>}
 
-    <footer><span>RESONA MVP v0.1.0</span><span>State-machine hardening · HiDPI inspector · deterministic variation</span></footer>
+    <footer><span>RESONA MVP v0.1.0</span><span>Debounced analysis · touch-safe controls · deterministic variation</span></footer>
   </main>;
 }

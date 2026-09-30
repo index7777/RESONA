@@ -1,0 +1,345 @@
+/* Mobile hardening overrides. Loaded after the base workbench and brand styles. */
+
+@media (max-width: 900px) {
+  .brand-hero {
+    min-height: min(610px, 92svh);
+  }
+
+  .brand-hero__content {
+    padding-top: 82px;
+    padding-bottom: 92px;
+  }
+}
+
+@media (max-width: 720px) {
+  .site-header {
+    width: calc(100% - 24px);
+    height: 62px;
+    gap: 12px;
+  }
+
+  .site-header__brand {
+    gap: 8px;
+    font-size: 13px;
+    letter-spacing: .17em;
+  }
+
+  .site-header__nav {
+    gap: 10px;
+  }
+
+  .site-header__nav a {
+    display: inline-flex !important;
+    min-height: 40px;
+    font-size: 11px;
+    letter-spacing: .02em;
+  }
+
+  .brand-hero {
+    min-height: min(585px, 88svh);
+  }
+
+  .brand-hero__art img {
+    object-position: 40% center;
+  }
+
+  .brand-hero__content {
+    width: calc(100% - 28px);
+    align-self: end;
+    padding-top: 74px;
+    padding-bottom: 88px;
+  }
+
+  .brand-hero__eyebrow {
+    margin-bottom: 12px;
+    font-size: 9px;
+    letter-spacing: .23em;
+  }
+
+  .brand-hero h1 {
+    max-width: 360px;
+    font-size: clamp(42px, 13vw, 56px);
+    line-height: .93;
+    letter-spacing: -.05em;
+  }
+
+  .brand-hero__lede {
+    width: min(460px, 92%);
+    margin-top: 18px;
+    font-size: 13.5px;
+    line-height: 1.52;
+  }
+
+  .brand-hero__actions {
+    width: min(460px, 100%);
+    margin-top: 22px;
+  }
+
+  .brand-hero__actions a {
+    min-height: 46px;
+    padding: 10px 13px;
+    font-size: 11.5px;
+  }
+
+  .brand-hero__rail {
+    width: calc(100% - 28px);
+    bottom: 16px;
+    gap: 6px;
+    font-size: 7.5px;
+    letter-spacing: .12em;
+  }
+
+  .brand-hero__rail i {
+    width: 12px;
+  }
+
+  .brand-workspace {
+    padding-top: 8px;
+  }
+
+  /* Keep dense desktop control groups horizontally reachable instead of stacking them into a tall wall. */
+  .brand-workspace .topbar {
+    gap: 12px;
+  }
+
+  .brand-workspace .actions {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .brand-workspace .actions::-webkit-scrollbar,
+  .brand-workspace .presetbar::-webkit-scrollbar,
+  .brand-workspace .flowbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .brand-workspace .actions button {
+    flex: 0 0 auto;
+    min-height: 44px;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .brand-workspace .actions button.primary {
+    order: -10;
+  }
+
+  .brand-workspace .flowbar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .brand-workspace .flowbar > * {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .brand-workspace .presetbar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+
+  .brand-workspace .presetbar > * {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .brand-workspace .presetbar button {
+    min-height: 40px;
+  }
+
+  .brand-workspace button,
+  .brand-workspace input,
+  .brand-workspace select,
+  .brand-workspace textarea {
+    touch-action: manipulation;
+  }
+
+  .brand-workspace .mini {
+    min-height: 38px;
+  }
+
+  .brand-workspace .icon {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .brand-workspace .layer .wave-selector {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Preserve time/frequency and time/amplitude geometry on narrow screens. */
+  .brand-workspace .spectrogram-panel canvas {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1200 / 260;
+    min-height: 0;
+  }
+
+  .brand-workspace .wave-panel canvas {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1200 / 180;
+    min-height: 0;
+  }
+
+  .brand-workspace .code-panel textarea {
+    min-height: 280px;
+    max-height: 48svh;
+  }
+
+  .mobile-note-editor {
+    display: flex;
+    position: sticky;
+    bottom: 10px;
+    z-index: 20;
+    max-width: 1400px;
+    margin: 0 auto 16px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border: 1px solid var(--resona-border);
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: rgba(11, 15, 20, .96);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    backdrop-filter: blur(16px);
+  }
+
+  .mobile-note-editor__meta {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+  }
+
+  .mobile-note-editor__meta small {
+    color: var(--resona-muted);
+    font-size: 10px;
+  }
+
+  .mobile-note-editor__controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mobile-note-editor__controls button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .mobile-note-editor__controls .mobile-note-editor__done {
+    width: auto;
+    min-width: 58px;
+    padding: 0 12px;
+  }
+
+  .mobile-note-editor__controls strong {
+    min-width: 48px;
+    text-align: center;
+    font: 700 14px ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  .step {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+@media (min-width: 721px) {
+  .mobile-note-editor {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-header__nav {
+    gap: 7px;
+  }
+
+  .site-header__nav a {
+    font-size: 10px;
+  }
+
+  .site-header__nav a svg {
+    display: none;
+  }
+
+  .brand-hero {
+    min-height: min(560px, 86svh);
+  }
+
+  .brand-hero__content {
+    padding-bottom: 82px;
+  }
+
+  .brand-hero h1 {
+    max-width: 330px;
+    font-size: clamp(40px, 12.5vw, 52px);
+  }
+
+  .brand-hero__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .brand-hero__actions a {
+    width: 100%;
+  }
+
+  .brand-workspace .promptbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .brand-workspace .promptbar input {
+    min-height: 44px;
+  }
+
+  .brand-workspace .promptbar button {
+    width: 100%;
+    min-height: 46px;
+    justify-content: center;
+  }
+
+  .brand-workspace .panel {
+    padding: 14px;
+  }
+
+  .brand-workspace .panel-title {
+    gap: 8px;
+  }
+
+  .brand-workspace .spectrogram-panel,
+  .brand-workspace .wave-panel {
+    overflow: hidden;
+  }
+
+  .mobile-note-editor {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mobile-note-editor__controls {
+    justify-content: space-between;
+  }
+}
