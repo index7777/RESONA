@@ -68,3 +68,9 @@ footer { max-width: 1400px; margin: 16px auto 0; display: flex; justify-content:
   .wave-selector { grid-template-columns: 1fr 1fr; }
   footer { flex-direction: column; }
 }
+
+.promptbar{max-width:1400px;margin:0 auto 16px;display:flex;align-items:center;gap:10px;border:1px solid #28303e;border-radius:15px;padding:10px 12px;background:rgba(12,16,23,.94);color:#70e7cf}
+.promptbar input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#eef4ff;padding:9px;font-size:14px}
+.spectrum{width:100%;height:210px;border-radius:14px;border:1px solid #1e2633;background:#080c12;margin-bottom:18px}
+.wave-selector{grid-template-columns:repeat(5,1fr)}
+@media(max-width:720px){.promptbar{align-items:stretch}.promptbar button{justify-content:center}.wave-selector{grid-template-columns:1fr 1fr}}
