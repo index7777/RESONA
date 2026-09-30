@@ -218,8 +218,11 @@ export function App() {
           onPointerDown={e => beginStepPress(ti, si, e)}
           onPointerUp={e => endStepPress(ti, si, e)}
           onPointerCancel={cancelStepPress}
-          onPointerLeave={e => { if (e.pointerType !== 'mouse') cancelStepPress(); }}
-          onContextMenu={e => { e.preventDefault(); note(ti, si, e.shiftKey ? -1 : 1); }}
+          onPointerLeave={cancelStepPress}
+          onContextMenu={e => {
+            e.preventDefault();
+            if (window.matchMedia('(pointer: fine)').matches) note(ti, si, e.shiftKey ? -1 : 1);
+          }}
           title="Tap: toggle · Long press: edit pitch · Right click: pitch +1 · Shift+right click: -1"
         >{step.on ? step.note : ''}</button>)}
       </div>)}
