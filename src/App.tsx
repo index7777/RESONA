@@ -1,165 +1,18 @@
-import { useMemo, useRef, useState } from 'react';
-import { Download, Play, RotateCcw, Sparkles, Volume2 } from 'lucide-react';
-import { defaultSound, exportWav, playSound, SoundDefinition, Waveform } from './audio';
-
-const waves: Waveform[] = ['sine', 'square', 'sawtooth', 'triangle'];
-
-function Slider({
-  label,
-  value,
-  min,
-  max,
-  step,
-  suffix,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  suffix?: string;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <label className="control">
-      <span>
-        {label}
-        <strong>{value}{suffix ?? ''}</strong>
-      </span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-      />
-    </label>
-  );
-}
-
-export function App() {
-  const [sound, setSound] = useState<SoundDefinition>(defaultSound);
-  const [status, setStatus] = useState('Ready');
-  const contextRef = useRef<AudioContext | null>(null);
-
-  const definition = useMemo(() => JSON.stringify(sound, null, 2), [sound]);
-
-  function patch<K extends keyof SoundDefinition>(key: K, value: SoundDefinition[K]) {
-    setSound((current) => ({ ...current, [key]: value }));
-  }
-
-  async function handlePlay() {
-    const context = contextRef.current ?? new AudioContext();
-    contextRef.current = context;
-    if (context.state === 'suspended') await context.resume();
-    playSound(context, sound);
-    setStatus('Playing');
-    window.setTimeout(() => setStatus('Ready'), sound.duration * 1000 + 100);
-  }
-
-  async function handleExport() {
-    setStatus('Rendering WAV…');
-    await exportWav(sound);
-    setStatus('Exported');
-    window.setTimeout(() => setStatus('Ready'), 1200);
-  }
-
-  return (
-    <main className="shell">
-      <header className="topbar">
-        <div className="brand">
-          <div className="brand-mark"><Sparkles size={17} /></div>
-          <div>
-            <h1>RESONA</h1>
-            <p>Programmable Sound Studio</p>
-          </div>
-        </div>
-        <div className="actions">
-          <button className="ghost" onClick={() => setSound(defaultSound)}><RotateCcw size={16} /> Reset</button>
-          <button className="ghost" onClick={handleExport}><Download size={16} /> Export WAV</button>
-          <button className="primary" onClick={handlePlay}><Play size={16} fill="currentColor" /> Play</button>
-        </div>
-      </header>
-
-      <section className="hero-panel">
-        <div>
-          <p className="eyebrow">Developer audio workbench</p>
-          <h2>{sound.name}</h2>
-          <p className="subtitle">Shape one-shot audio with deterministic browser DSP, then export it as a production-ready WAV.</p>
-        </div>
-        <div className="status"><Volume2 size={16} /> {status}</div>
-      </section>
-
-      <section className="grid">
-        <div className="panel synth-panel">
-          <div className="panel-title">
-            <span>Generator</span>
-            <small>Web Audio API</small>
-          </div>
-
-          <label className="text-control">
-            <span>Name</span>
-            <input value={sound.name} onChange={(event) => patch('name', event.target.value)} />
-          </label>
-
-          <div className="wave-selector">
-            {waves.map((wave) => (
-              <button
-                key={wave}
-                className={sound.waveform === wave ? 'active' : ''}
-                onClick={() => patch('waveform', wave)}
-              >
-                {wave}
-              </button>
-            ))}
-          </div>
-
-          <Slider label="Frequency" value={sound.frequency} min={60} max={1600} step={1} suffix=" Hz" onChange={(v) => patch('frequency', v)} />
-          <Slider label="Duration" value={sound.duration} min={0.1} max={3} step={0.01} suffix=" s" onChange={(v) => patch('duration', v)} />
-          <Slider label="Gain" value={sound.gain} min={0.02} max={0.8} step={0.01} onChange={(v) => patch('gain', v)} />
-          <Slider label="Filter" value={sound.filterFrequency} min={120} max={12000} step={10} suffix=" Hz" onChange={(v) => patch('filterFrequency', v)} />
-          <Slider label="Resonance" value={sound.filterQ} min={0} max={18} step={0.1} onChange={(v) => patch('filterQ', v)} />
-        </div>
-
-        <div className="panel envelope-panel">
-          <div className="panel-title">
-            <span>Envelope</span>
-            <small>ADSR</small>
-          </div>
-          <div className="visualizer" aria-hidden="true">
-            <svg viewBox="0 0 600 220" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="stroke" x1="0" x2="1">
-                  <stop offset="0%" stopColor="#67f3d4" />
-                  <stop offset="55%" stopColor="#63b7ff" />
-                  <stop offset="100%" stopColor="#d979ff" />
-                </linearGradient>
-              </defs>
-              <path d="M 0 205 L 70 24 L 170 110 L 430 110 L 590 205" fill="none" stroke="url(#stroke)" strokeWidth="5" />
-              <path d="M 0 205 L 70 24 L 170 110 L 430 110 L 590 205 L 0 205" fill="url(#stroke)" opacity="0.08" />
-            </svg>
-          </div>
-          <Slider label="Attack" value={sound.attack} min={0.001} max={0.8} step={0.001} suffix=" s" onChange={(v) => patch('attack', v)} />
-          <Slider label="Decay" value={sound.decay} min={0.001} max={1} step={0.001} suffix=" s" onChange={(v) => patch('decay', v)} />
-          <Slider label="Sustain" value={sound.sustain} min={0.01} max={1} step={0.01} onChange={(v) => patch('sustain', v)} />
-          <Slider label="Release" value={sound.release} min={0.001} max={1.5} step={0.001} suffix=" s" onChange={(v) => patch('release', v)} />
-        </div>
-
-        <div className="panel code-panel">
-          <div className="panel-title">
-            <span>Sound Definition</span>
-            <small>Agent-friendly JSON</small>
-          </div>
-          <pre>{definition}</pre>
-        </div>
-      </section>
-
-      <footer>
-        <span>RESONA v0.1</span>
-        <span>Local-first · deterministic DSP · no backend required</span>
-      </footer>
-    </main>
-  );
-}
+import {useEffect,useMemo,useRef,useState} from 'react';
+import {Download,Play,RotateCcw,Sparkles,Volume2,WandSparkles} from 'lucide-react';
+import {defaultSound,exportWav,playSound,SoundDefinition,Waveform} from './audio';
+const waves:Waveform[]=['sine','square','sawtooth','triangle','noise'];
+function Slider(p:{label:string;value:number;min:number;max:number;step:number;suffix?:string;onChange:(v:number)=>void}){return <label className="control"><span>{p.label}<strong>{p.value}{p.suffix??''}</strong></span><input type="range" min={p.min} max={p.max} step={p.step} value={p.value} onChange={e=>p.onChange(Number(e.target.value))}/></label>}
+function preset(prompt:string):SoundDefinition{const q=prompt.toLowerCase();if(/explosion|爆炸|impact|撞擊/.test(q))return {...defaultSound,name:'Impact Burst',waveform:'noise',duration:1.15,gain:.5,attack:.002,decay:.16,sustain:.25,release:.75,filterFrequency:1800,filterQ:1};if(/laser|雷射|sci.?fi|科幻/.test(q))return {...defaultSound,name:'Photon Laser',waveform:'sawtooth',frequency:920,duration:.42,gain:.24,attack:.002,decay:.1,sustain:.2,release:.25,filterFrequency:5200,filterQ:7};if(/coin|金幣|pickup|拾取/.test(q))return {...defaultSound,name:'Crystal Pickup',waveform:'sine',frequency:1180,duration:.32,gain:.3,attack:.002,decay:.08,sustain:.2,release:.18,filterFrequency:9000,filterQ:2};if(/ambient|環境|wind|風/.test(q))return {...defaultSound,name:'Air Bed',waveform:'noise',duration:2.6,gain:.12,attack:.45,decay:.3,sustain:.7,release:.8,filterFrequency:1200,filterQ:.8};return {...defaultSound,name:'AI Confirm'};}
+export function App(){const [sound,setSound]=useState(defaultSound),[status,setStatus]=useState('Ready'),[prompt,setPrompt]=useState('cyberpunk UI confirm sound'),ctx=useRef<AudioContext|null>(null),canvas=useRef<HTMLCanvasElement|null>(null),raf=useRef(0);const definition=useMemo(()=>JSON.stringify(sound,null,2),[sound]);const patch=<K extends keyof SoundDefinition>(k:K,v:SoundDefinition[K])=>setSound(s=>({...s,[k]:v}));
+useEffect(()=>()=>cancelAnimationFrame(raf.current),[]);
+function draw(a:AnalyserNode){const c=canvas.current;if(!c)return;const x=c.getContext('2d');if(!x)return;const d=new Uint8Array(a.frequencyBinCount);const loop=()=>{a.getByteFrequencyData(d);x.clearRect(0,0,c.width,c.height);x.fillStyle='#080c12';x.fillRect(0,0,c.width,c.height);const w=c.width/d.length;for(let i=0;i<d.length;i+=4){const h=d[i]/255*c.height;x.fillStyle=`hsl(${165+i/d.length*115} 75% 65%)`;x.fillRect(i*w,c.height-h,Math.max(1,w*3),h)}raf.current=requestAnimationFrame(loop)};loop();}
+async function play(){const c=ctx.current??new AudioContext();ctx.current=c;if(c.state==='suspended')await c.resume();const a=c.createAnalyser();a.fftSize=512;playSound(c,sound,a);draw(a);setStatus('Playing');setTimeout(()=>{setStatus('Ready');cancelAnimationFrame(raf.current)},sound.duration*1000+150)}
+async function exp(){setStatus('Rendering WAV…');await exportWav(sound);setStatus('Exported');setTimeout(()=>setStatus('Ready'),1000)}
+function generate(){setSound(preset(prompt));setStatus('Generated locally');setTimeout(()=>setStatus('Ready'),1000)}
+return <main className="shell"><header className="topbar"><div className="brand"><div className="brand-mark"><Sparkles size={17}/></div><div><h1>RESONA</h1><p>Programmable Sound Studio</p></div></div><div className="actions"><button className="ghost" onClick={()=>setSound(defaultSound)}><RotateCcw size={16}/>Reset</button><button className="ghost" onClick={exp}><Download size={16}/>Export WAV</button><button className="primary" onClick={play}><Play size={16} fill="currentColor"/>Play</button></div></header>
+<section className="promptbar"><WandSparkles size={18}/><input value={prompt} onChange={e=>setPrompt(e.target.value)} onKeyDown={e=>e.key==='Enter'&&generate()} placeholder="Describe a sound…"/><button className="primary" onClick={generate}>Generate</button></section>
+<section className="hero-panel"><div><p className="eyebrow">Developer audio workbench</p><h2>{sound.name}</h2><p className="subtitle">Prompt-to-DSP presets, live spectrum, deterministic synthesis and production WAV export — all in your browser.</p></div><div className="status"><Volume2 size={16}/>{status}</div></section>
+<section className="grid"><div className="panel synth-panel"><div className="panel-title"><span>Generator</span><small>Web Audio API</small></div><label className="text-control"><span>Name</span><input value={sound.name} onChange={e=>patch('name',e.target.value)}/></label><div className="wave-selector">{waves.map(w=><button key={w} className={sound.waveform===w?'active':''} onClick={()=>patch('waveform',w)}>{w}</button>)}</div><Slider label="Frequency" value={sound.frequency} min={60} max={1600} step={1} suffix=" Hz" onChange={v=>patch('frequency',v)}/><Slider label="Duration" value={sound.duration} min=.1 max={3} step=.01 suffix=" s" onChange={v=>patch('duration',v)}/><Slider label="Gain" value={sound.gain} min=.02 max=.8 step=.01 onChange={v=>patch('gain',v)}/><Slider label="Filter" value={sound.filterFrequency} min={120} max={12000} step={10} suffix=" Hz" onChange={v=>patch('filterFrequency',v)}/><Slider label="Resonance" value={sound.filterQ} min={0} max={18} step=.1 onChange={v=>patch('filterQ',v)}/></div>
+<div className="panel envelope-panel"><div className="panel-title"><span>Spectrum + Envelope</span><small>live analyser</small></div><canvas ref={canvas} width={800} height={210} className="spectrum"/><Slider label="Attack" value={sound.attack} min=.001 max=.8 step=.001 suffix=" s" onChange={v=>patch('attack',v)}/><Slider label="Decay" value={sound.decay} min=.001 max={1} step=.001 suffix=" s" onChange={v=>patch('decay',v)}/><Slider label="Sustain" value={sound.sustain} min=.01 max={1} step=.01 onChange={v=>patch('sustain',v)}/><Slider label="Release" value={sound.release} min=.001 max={1.5} step=.001 suffix=" s" onChange={v=>patch('release',v)}/></div>
+<div className="panel code-panel"><div className="panel-title"><span>Sound Definition</span><small>Agent-friendly JSON</small></div><pre>{definition}</pre></div></section><footer><span>RESONA v0.2</span><span>Local-first · prompt-to-DSP · live spectrum · WAV export</span></footer></main>}
