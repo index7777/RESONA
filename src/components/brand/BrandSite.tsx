@@ -1,9 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ArrowDown, Github } from 'lucide-react';
 
-const HERO_DESKTOP = '/brand/resona-hero-desktop.webp';
-const HERO_MOBILE = '/brand/resona-hero-mobile.webp';
-const HERO_FALLBACK = '/brand/resona-hero-fallback.svg';
+const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
+const HERO_DESKTOP = asset('brand/resona-hero-desktop.webp');
+const HERO_MOBILE = asset('brand/resona-hero-mobile.webp');
+const HERO_FALLBACK = asset('brand/resona-hero-fallback.svg');
 const INTRO_KEY = 'resona:intro-seen';
 
 function ResonanceMark({ compact = false }: { compact?: boolean }) {
