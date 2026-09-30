@@ -1,26 +1,14 @@
-export type Waveform = 'sine' | 'square' | 'sawtooth' | 'triangle' | 'noise';
-export type SoundDefinition = {
-  name:string; waveform:Waveform; frequency:number; duration:number; gain:number;
-  attack:number; decay:number; sustain:number; release:number; filterFrequency:number; filterQ:number;
-};
-export const defaultSound:SoundDefinition={name:'Neon Confirm',waveform:'sawtooth',frequency:440,duration:.85,gain:.28,attack:.01,decay:.18,sustain:.42,release:.3,filterFrequency:2400,filterQ:4};
-
-function env(g:AudioParam,start:number,d:SoundDefinition){
- const a=start+Math.max(.001,d.attack), de=a+Math.max(.001,d.decay), e=start+d.duration, s=Math.max(de,e-d.release);
- g.cancelScheduledValues(start); g.setValueAtTime(.0001,start); g.exponentialRampToValueAtTime(Math.max(.0001,d.gain),a);
- g.exponentialRampToValueAtTime(Math.max(.0001,d.gain*d.sustain),de); g.setValueAtTime(Math.max(.0001,d.gain*d.sustain),s); g.exponentialRampToValueAtTime(.0001,e);
-}
-function noiseBuffer(ctx:BaseAudioContext,duration:number){
- const b=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*(duration+.05)),ctx.sampleRate), x=b.getChannelData(0);
- for(let i=0;i<x.length;i++) x[i]=Math.random()*2-1; return b;
-}
-function wire(ctx:BaseAudioContext,d:SoundDefinition,destination:AudioNode,start:number){
- const filter=ctx.createBiquadFilter(), amp=ctx.createGain(); filter.type='lowpass'; filter.frequency.value=d.filterFrequency; filter.Q.value=d.filterQ; env(amp.gain,start,d); filter.connect(amp); amp.connect(destination);
- if(d.waveform==='noise'){ const src=ctx.createBufferSource(); src.buffer=noiseBuffer(ctx,d.duration); src.connect(filter); src.start(start); src.stop(start+d.duration+.02); return; }
- const osc=ctx.createOscillator(); osc.type=d.waveform; osc.frequency.value=d.frequency; osc.connect(filter); osc.start(start); osc.stop(start+d.duration+.02);
-}
-export function playSound(ctx:AudioContext,d:SoundDefinition,analyser?:AnalyserNode){ if(analyser){ analyser.disconnect(); analyser.connect(ctx.destination); wire(ctx,d,analyser,ctx.currentTime); } else wire(ctx,d,ctx.destination,ctx.currentTime); }
-export async function renderSound(d:SoundDefinition){ const sr=48000, ctx=new OfflineAudioContext(1,Math.ceil(sr*(d.duration+.05)),sr); wire(ctx,d,ctx.destination,0); return ctx.startRendering(); }
-function ascii(v:DataView,o:number,s:string){for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));}
-export function audioBufferToWav(b:AudioBuffer){const c=b.numberOfChannels,sr=b.sampleRate,f=b.length,ba=c*2,ds=f*ba,ab=new ArrayBuffer(44+ds),v=new DataView(ab);ascii(v,0,'RIFF');v.setUint32(4,36+ds,true);ascii(v,8,'WAVE');ascii(v,12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,c,true);v.setUint32(24,sr,true);v.setUint32(28,sr*ba,true);v.setUint16(32,ba,true);v.setUint16(34,16,true);ascii(v,36,'data');v.setUint32(40,ds,true);let o=44;for(let i=0;i<f;i++)for(let ch=0;ch<c;ch++){const s=Math.max(-1,Math.min(1,b.getChannelData(ch)[i]));v.setInt16(o,s<0?s*0x8000:s*0x7fff,true);o+=2;}return new Blob([ab],{type:'audio/wav'});}
-export async function exportWav(d:SoundDefinition){const b=await renderSound(d),u=URL.createObjectURL(audioBufferToWav(b)),a=document.createElement('a');a.href=u;a.download=`${d.name.toLowerCase().replace(/[^a-z0-9]+/g,'-')||'resona-sound'}.wav`;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
+export type Waveform='sine'|'square'|'sawtooth'|'triangle'|'noise';
+export type Layer={id:string;waveform:Waveform;frequency:number;detune:number;gain:number;pitchDrop:number};
+export type SoundDefinition={name:string;duration:number;attack:number;decay:number;sustain:number;release:number;filterFrequency:number;filterQ:number;distortion:number;delay:number;layers:Layer[]};
+export const defaultSound:SoundDefinition={name:'Neon Confirm',duration:.85,attack:.01,decay:.18,sustain:.42,release:.3,filterFrequency:3200,filterQ:4,distortion:6,delay:.12,layers:[{id:'tone',waveform:'sawtooth',frequency:440,detune:0,gain:.2,pitchDrop:0},{id:'shine',waveform:'sine',frequency:880,detune:7,gain:.1,pitchDrop:240}]};
+function env(g:AudioParam,s:number,d:SoundDefinition,peak:number){const a=s+Math.max(.001,d.attack),de=a+Math.max(.001,d.decay),e=s+d.duration,su=Math.max(de,e-d.release);g.setValueAtTime(.0001,s);g.exponentialRampToValueAtTime(Math.max(.0001,peak),a);g.exponentialRampToValueAtTime(Math.max(.0001,peak*d.sustain),de);g.setValueAtTime(Math.max(.0001,peak*d.sustain),su);g.exponentialRampToValueAtTime(.0001,e)}
+function noise(ctx:BaseAudioContext,n:number){const b=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*n),ctx.sampleRate),x=b.getChannelData(0);for(let i=0;i<x.length;i++)x[i]=Math.random()*2-1;return b}
+function curve(amount:number){const n=1024,c=new Float32Array(n),k=amount*8;for(let i=0;i<n;i++){const x=i*2/n-1;c[i]=(1+k)*x/(1+k*Math.abs(x))}return c}
+function graph(ctx:BaseAudioContext,d:SoundDefinition,dest:AudioNode,start:number){const mix=ctx.createGain(),f=ctx.createBiquadFilter(),sh=ctx.createWaveShaper(),dry=ctx.createGain(),wet=ctx.createGain(),del=ctx.createDelay(1);f.type='lowpass';f.frequency.value=d.filterFrequency;f.Q.value=d.filterQ;sh.curve=curve(d.distortion);sh.oversample='2x';dry.gain.value=1;wet.gain.value=Math.min(.65,d.delay);del.delayTime.value=.16;mix.connect(f);f.connect(sh);sh.connect(dry);dry.connect(dest);sh.connect(del);del.connect(wet);wet.connect(dest);
+for(const l of d.layers){const a=ctx.createGain();env(a.gain,start,d,l.gain);a.connect(mix);if(l.waveform==='noise'){const s=ctx.createBufferSource();s.buffer=noise(ctx,d.duration+.05);s.connect(a);s.start(start);s.stop(start+d.duration+.03)}else{const o=ctx.createOscillator();o.type=l.waveform;o.detune.value=l.detune;o.frequency.setValueAtTime(Math.max(20,l.frequency),start);if(l.pitchDrop)o.frequency.exponentialRampToValueAtTime(Math.max(20,l.frequency-l.pitchDrop),start+d.duration);o.connect(a);o.start(start);o.stop(start+d.duration+.03)}}}
+export function playSound(ctx:AudioContext,d:SoundDefinition,a?:AnalyserNode){if(a){a.disconnect();a.connect(ctx.destination);graph(ctx,d,a,ctx.currentTime)}else graph(ctx,d,ctx.destination,ctx.currentTime)}
+export async function renderSound(d:SoundDefinition){const sr=48000,c=new OfflineAudioContext(1,Math.ceil(sr*(d.duration+.35)),sr);graph(c,d,c.destination,0);return c.startRendering()}
+function ascii(v:DataView,o:number,s:string){for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))}
+export function audioBufferToWav(b:AudioBuffer){const c=b.numberOfChannels,sr=b.sampleRate,f=b.length,ba=c*2,ds=f*ba,ab=new ArrayBuffer(44+ds),v=new DataView(ab);ascii(v,0,'RIFF');v.setUint32(4,36+ds,true);ascii(v,8,'WAVE');ascii(v,12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,c,true);v.setUint32(24,sr,true);v.setUint32(28,sr*ba,true);v.setUint16(32,ba,true);v.setUint16(34,16,true);ascii(v,36,'data');v.setUint32(40,ds,true);let o=44;for(let i=0;i<f;i++)for(let ch=0;ch<c;ch++){const s=Math.max(-1,Math.min(1,b.getChannelData(ch)[i]));v.setInt16(o,s<0?s*32768:s*32767,true);o+=2}return new Blob([ab],{type:'audio/wav'})}
+export async function exportWav(d:SoundDefinition){const b=await renderSound(d),u=URL.createObjectURL(audioBufferToWav(b)),a=document.createElement('a');a.href=u;a.download=(d.name.toLowerCase().replace(/[^a-z0-9]+/g,'-')||'resona')+'.wav';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
