@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",\n    "render": "node --no-warnings --experimental-strip-types scripts/render.ts"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
