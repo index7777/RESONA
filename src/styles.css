@@ -102,3 +102,9 @@ footer { max-width: 1400px; margin: 16px auto 0; display: flex; justify-content:
 .mod-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.mod-row select{width:100%;background:#090d13;color:#aab5c6;border:1px solid #273140;border-radius:8px;padding:8px;font-size:11px}
 
 .flowbar{max-width:1400px;margin:0 auto 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.flowbar span{padding:7px 10px;border:1px solid #222b38;border-radius:999px;background:#090d13;color:#8d99ad;font-size:11px}.flowbar span:first-child,.flowbar span:nth-child(2){color:#76f1db;border-color:#31594f}.flowbar button{margin-left:auto;padding:7px 11px}@media(max-width:720px){.flowbar button{margin-left:0;width:100%;justify-content:center}}
+
+/* IR v3 physical programs */
+.presetbar.physical{border-top:1px solid rgba(255,255,255,.06)}
+.presetbar.physical button.active{border-color:#67f3d4;color:#67f3d4}
+.voice-meta{margin:2px 0 6px;font-size:12px;opacity:.72;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-word}
+.control input[type=number]{background:#080c12;color:inherit;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 8px;font:inherit}
