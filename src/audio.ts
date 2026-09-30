@@ -1,158 +1,26 @@
-export type Waveform = 'sine' | 'square' | 'sawtooth' | 'triangle';
-
+export type Waveform = 'sine' | 'square' | 'sawtooth' | 'triangle' | 'noise';
 export type SoundDefinition = {
-  name: string;
-  waveform: Waveform;
-  frequency: number;
-  duration: number;
-  gain: number;
-  attack: number;
-  decay: number;
-  sustain: number;
-  release: number;
-  filterFrequency: number;
-  filterQ: number;
+  name:string; waveform:Waveform; frequency:number; duration:number; gain:number;
+  attack:number; decay:number; sustain:number; release:number; filterFrequency:number; filterQ:number;
 };
+export const defaultSound:SoundDefinition={name:'Neon Confirm',waveform:'sawtooth',frequency:440,duration:.85,gain:.28,attack:.01,decay:.18,sustain:.42,release:.3,filterFrequency:2400,filterQ:4};
 
-export const defaultSound: SoundDefinition = {
-  name: 'Neon Confirm',
-  waveform: 'sawtooth',
-  frequency: 440,
-  duration: 0.85,
-  gain: 0.28,
-  attack: 0.01,
-  decay: 0.18,
-  sustain: 0.42,
-  release: 0.3,
-  filterFrequency: 2400,
-  filterQ: 4,
-};
-
-function scheduleEnvelope(
-  gain: AudioParam,
-  start: number,
-  definition: SoundDefinition,
-) {
-  const { attack, decay, sustain, release, duration, gain: peak } = definition;
-  const attackEnd = start + Math.max(0.001, attack);
-  const decayEnd = attackEnd + Math.max(0.001, decay);
-  const sustainEnd = Math.max(decayEnd, start + duration - release);
-  const end = start + duration;
-
-  gain.cancelScheduledValues(start);
-  gain.setValueAtTime(0.0001, start);
-  gain.exponentialRampToValueAtTime(Math.max(0.0001, peak), attackEnd);
-  gain.exponentialRampToValueAtTime(Math.max(0.0001, peak * sustain), decayEnd);
-  gain.setValueAtTime(Math.max(0.0001, peak * sustain), sustainEnd);
-  gain.exponentialRampToValueAtTime(0.0001, end);
+function env(g:AudioParam,start:number,d:SoundDefinition){
+ const a=start+Math.max(.001,d.attack), de=a+Math.max(.001,d.decay), e=start+d.duration, s=Math.max(de,e-d.release);
+ g.cancelScheduledValues(start); g.setValueAtTime(.0001,start); g.exponentialRampToValueAtTime(Math.max(.0001,d.gain),a);
+ g.exponentialRampToValueAtTime(Math.max(.0001,d.gain*d.sustain),de); g.setValueAtTime(Math.max(.0001,d.gain*d.sustain),s); g.exponentialRampToValueAtTime(.0001,e);
 }
-
-export function playSound(
-  context: AudioContext,
-  definition: SoundDefinition,
-  analyser?: AnalyserNode,
-) {
-  const osc = context.createOscillator();
-  const filter = context.createBiquadFilter();
-  const amp = context.createGain();
-
-  osc.type = definition.waveform;
-  osc.frequency.value = definition.frequency;
-
-  filter.type = 'lowpass';
-  filter.frequency.value = definition.filterFrequency;
-  filter.Q.value = definition.filterQ;
-
-  const now = context.currentTime;
-  scheduleEnvelope(amp.gain, now, definition);
-
-  osc.connect(filter);
-  filter.connect(amp);
-
-  if (analyser) {
-    amp.connect(analyser);
-    analyser.connect(context.destination);
-  } else {
-    amp.connect(context.destination);
-  }
-
-  osc.start(now);
-  osc.stop(now + definition.duration + 0.02);
+function noiseBuffer(ctx:BaseAudioContext,duration:number){
+ const b=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*(duration+.05)),ctx.sampleRate), x=b.getChannelData(0);
+ for(let i=0;i<x.length;i++) x[i]=Math.random()*2-1; return b;
 }
-
-export async function renderSound(definition: SoundDefinition) {
-  const sampleRate = 48000;
-  const length = Math.ceil(sampleRate * (definition.duration + 0.05));
-  const context = new OfflineAudioContext(1, length, sampleRate);
-  const osc = context.createOscillator();
-  const filter = context.createBiquadFilter();
-  const amp = context.createGain();
-
-  osc.type = definition.waveform;
-  osc.frequency.value = definition.frequency;
-  filter.type = 'lowpass';
-  filter.frequency.value = definition.filterFrequency;
-  filter.Q.value = definition.filterQ;
-
-  scheduleEnvelope(amp.gain, 0, definition);
-  osc.connect(filter);
-  filter.connect(amp);
-  amp.connect(context.destination);
-  osc.start(0);
-  osc.stop(definition.duration + 0.02);
-
-  return context.startRendering();
+function wire(ctx:BaseAudioContext,d:SoundDefinition,destination:AudioNode,start:number){
+ const filter=ctx.createBiquadFilter(), amp=ctx.createGain(); filter.type='lowpass'; filter.frequency.value=d.filterFrequency; filter.Q.value=d.filterQ; env(amp.gain,start,d); filter.connect(amp); amp.connect(destination);
+ if(d.waveform==='noise'){ const src=ctx.createBufferSource(); src.buffer=noiseBuffer(ctx,d.duration); src.connect(filter); src.start(start); src.stop(start+d.duration+.02); return; }
+ const osc=ctx.createOscillator(); osc.type=d.waveform; osc.frequency.value=d.frequency; osc.connect(filter); osc.start(start); osc.stop(start+d.duration+.02);
 }
-
-function writeAscii(view: DataView, offset: number, value: string) {
-  for (let i = 0; i < value.length; i += 1) {
-    view.setUint8(offset + i, value.charCodeAt(i));
-  }
-}
-
-export function audioBufferToWav(buffer: AudioBuffer) {
-  const channels = buffer.numberOfChannels;
-  const sampleRate = buffer.sampleRate;
-  const frames = buffer.length;
-  const bytesPerSample = 2;
-  const blockAlign = channels * bytesPerSample;
-  const dataSize = frames * blockAlign;
-  const arrayBuffer = new ArrayBuffer(44 + dataSize);
-  const view = new DataView(arrayBuffer);
-
-  writeAscii(view, 0, 'RIFF');
-  view.setUint32(4, 36 + dataSize, true);
-  writeAscii(view, 8, 'WAVE');
-  writeAscii(view, 12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, channels, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * blockAlign, true);
-  view.setUint16(32, blockAlign, true);
-  view.setUint16(34, 16, true);
-  writeAscii(view, 36, 'data');
-  view.setUint32(40, dataSize, true);
-
-  let offset = 44;
-  for (let i = 0; i < frames; i += 1) {
-    for (let channel = 0; channel < channels; channel += 1) {
-      const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
-      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
-      offset += 2;
-    }
-  }
-
-  return new Blob([arrayBuffer], { type: 'audio/wav' });
-}
-
-export async function exportWav(definition: SoundDefinition) {
-  const rendered = await renderSound(definition);
-  const blob = audioBufferToWav(rendered);
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = `${definition.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'resona-sound'}.wav`;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
+export function playSound(ctx:AudioContext,d:SoundDefinition,analyser?:AnalyserNode){ if(analyser){ analyser.disconnect(); analyser.connect(ctx.destination); wire(ctx,d,analyser,ctx.currentTime); } else wire(ctx,d,ctx.destination,ctx.currentTime); }
+export async function renderSound(d:SoundDefinition){ const sr=48000, ctx=new OfflineAudioContext(1,Math.ceil(sr*(d.duration+.05)),sr); wire(ctx,d,ctx.destination,0); return ctx.startRendering(); }
+function ascii(v:DataView,o:number,s:string){for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));}
+export function audioBufferToWav(b:AudioBuffer){const c=b.numberOfChannels,sr=b.sampleRate,f=b.length,ba=c*2,ds=f*ba,ab=new ArrayBuffer(44+ds),v=new DataView(ab);ascii(v,0,'RIFF');v.setUint32(4,36+ds,true);ascii(v,8,'WAVE');ascii(v,12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,c,true);v.setUint32(24,sr,true);v.setUint32(28,sr*ba,true);v.setUint16(32,ba,true);v.setUint16(34,16,true);ascii(v,36,'data');v.setUint32(40,ds,true);let o=44;for(let i=0;i<f;i++)for(let ch=0;ch<c;ch++){const s=Math.max(-1,Math.min(1,b.getChannelData(ch)[i]));v.setInt16(o,s<0?s*0x8000:s*0x7fff,true);o+=2;}return new Blob([ab],{type:'audio/wav'});}
+export async function exportWav(d:SoundDefinition){const b=await renderSound(d),u=URL.createObjectURL(audioBufferToWav(b)),a=document.createElement('a');a.href=u;a.download=`${d.name.toLowerCase().replace(/[^a-z0-9]+/g,'-')||'resona-sound'}.wav`;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
