@@ -125,6 +125,10 @@
     white-space: nowrap;
   }
 
+  .brand-workspace .actions button.primary {
+    order: -10;
+  }
+
   .brand-workspace .flowbar {
     overflow-x: auto;
     flex-wrap: nowrap;
@@ -241,6 +245,12 @@
     justify-content: center;
   }
 
+  .mobile-note-editor__controls .mobile-note-editor__done {
+    width: auto;
+    min-width: 58px;
+    padding: 0 12px;
+  }
+
   .mobile-note-editor__controls strong {
     min-width: 48px;
     text-align: center;
@@ -322,5 +332,14 @@
   .brand-workspace .spectrogram-panel,
   .brand-workspace .wave-panel {
     overflow: hidden;
+  }
+
+  .mobile-note-editor {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mobile-note-editor__controls {
+    justify-content: space-between;
   }
 }
