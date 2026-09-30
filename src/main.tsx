@@ -4,6 +4,7 @@ import { App } from './App';
 import { BrandSite } from './components/brand/BrandSite';
 import './styles.css';
 import './brand.css';
+import './mobile.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
