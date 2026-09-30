@@ -1,0 +1,5 @@
+import type{SoundDefinition}from'./audio';import type{Song}from'./sequencer';import type{AudioMetrics}from'./inspector';
+export type FixReport={reason:string;gainScale:number};
+const scaleFor=(m:AudioMetrics,target=.89)=>m.peak>target?Math.max(.2,Math.min(1,target/m.peak)):1;
+export function fixSound(s:SoundDefinition,m:AudioMetrics):{value:SoundDefinition;report:FixReport}{const k=scaleFor(m),reasons=[] as string[];if(m.clipped)reasons.push('clipping');else if(m.peak>.95)reasons.push('low headroom');if(Math.abs(m.dc)>.01)reasons.push('DC offset flagged for render review');return{value:{...s,layers:s.layers.map(x=>({...x,gain:+(x.gain*k).toFixed(4)}))},report:{reason:reasons.join(', ')||'no gain correction required',gainScale:k}}}
+export function fixSong(s:Song,m:AudioMetrics):{value:Song;report:FixReport}{const k=scaleFor(m),reasons=[] as string[];if(m.clipped)reasons.push('clipping');else if(m.peak>.95)reasons.push('low headroom');return{value:{...s,tracks:s.tracks.map(x=>({...x,gain:+(x.gain*k).toFixed(4)})),drums:s.drums.map(x=>({...x,gain:+(x.gain*k).toFixed(4)}))},report:{reason:reasons.join(', ')||'no gain correction required',gainScale:k}}}
