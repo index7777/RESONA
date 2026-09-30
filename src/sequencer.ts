@@ -1,0 +1,5 @@
+export type Step={note:number;on:boolean};export type Track={name:string;wave:'sine'|'square'|'sawtooth'|'triangle';gain:number;steps:Step[]};export type Song={name:string;bpm:number;tracks:Track[]};
+const n=[48,48,55,48,51,48,58,55,60,60,67,60,63,60,70,67];
+export const defaultSong:Song={name:'Neon Loop',bpm:112,tracks:[{name:'Bass',wave:'sawtooth',gain:.13,steps:n.map((v,i)=>({note:v,on:i%4===0}))},{name:'Pulse',wave:'square',gain:.055,steps:n.map((v,i)=>({note:v+12,on:i%2===0}))},{name:'Lead',wave:'triangle',gain:.08,steps:n.map((v,i)=>({note:v+24,on:[3,7,10,14].includes(i)}))}]};
+const hz=(m:number)=>440*Math.pow(2,(m-69)/12);
+export function playSong(ctx:AudioContext,s:Song){const step=60/s.bpm/4,start=ctx.currentTime;s.tracks.forEach(t=>t.steps.forEach((x,i)=>{if(!x.on)return;const at=start+i*step,o=ctx.createOscillator(),g=ctx.createGain();o.type=t.wave;o.frequency.value=hz(x.note);g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(t.gain,at+.008);g.gain.exponentialRampToValueAtTime(.0001,at+step*.8);o.connect(g);g.connect(ctx.destination);o.start(at);o.stop(at+step*.85)}));return step*16}
