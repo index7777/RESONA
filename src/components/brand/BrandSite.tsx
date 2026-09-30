@@ -4,6 +4,7 @@ import { ArrowDown, Github } from 'lucide-react';
 const HERO_DESKTOP = '/brand/resona-hero-desktop.webp';
 const HERO_MOBILE = '/brand/resona-hero-mobile.webp';
 const HERO_FALLBACK = '/brand/resona-hero-fallback.svg';
+const INTRO_KEY = 'resona:intro-seen';
 
 function ResonanceMark({ compact = false }: { compact?: boolean }) {
   return (
@@ -20,20 +21,29 @@ function ResonanceMark({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function shouldShowIntro() {
+  try {
+    return !window.sessionStorage.getItem(INTRO_KEY);
+  } catch {
+    return false;
+  }
+}
+
 function IntroGate() {
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(shouldShowIntro);
 
   useEffect(() => {
+    if (!visible) return;
+
     try {
-      if (sessionStorage.getItem('resona:intro-seen')) return;
-      sessionStorage.setItem('resona:intro-seen', '1');
-      setVisible(true);
-      const timer = window.setTimeout(() => setVisible(false), 1650);
-      return () => window.clearTimeout(timer);
+      window.sessionStorage.setItem(INTRO_KEY, '1');
     } catch {
-      return undefined;
+      // Storage is optional; the visual sequence can still complete normally.
     }
-  }, []);
+
+    const timer = window.setTimeout(() => setVisible(false), 1650);
+    return () => window.clearTimeout(timer);
+  }, [visible]);
 
   if (!visible) return null;
 
@@ -69,7 +79,7 @@ function HeroArtwork() {
 
   return (
     <picture className="brand-hero__art" aria-hidden="true">
-      {!failed && <source media="(max-width: 720px)" srcSet={HERO_MOBILE} />}
+      {!failed && <source media="(max-width: 720px)" srcSet={HERO_MOBILE} type="image/webp" />}
       <img
         src={failed ? HERO_FALLBACK : HERO_DESKTOP}
         alt=""
