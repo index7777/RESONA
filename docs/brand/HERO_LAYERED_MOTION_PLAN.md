@@ -2,6 +2,27 @@
 
 > Goal: make the existing RESONA Hero feel alive with restrained 2.5D / Live2D-like depth while preserving the current premium, technical visual language.
 
+## Implementation status
+
+- Milestone A — implemented on `hero-motion-plan`
+- Milestone B — implemented on `hero-motion-plan`
+- Milestone C — pending layered artwork assets
+- Milestone D — pending audio-reactive refinement
+
+Current implementation commit target: `Implement Hero motion scaffold and signal depth`.
+
+The A+B implementation adds:
+
+- extracted `BrandHero`
+- `HeroMotionStage`
+- damped pointer / touch CSS-variable depth motion
+- SVG HUD / waveform / routing / signal-node overlays
+- scan / optimize / verified / warning / error signal responses
+- semantic Hero signal event API
+- reduced-motion handling
+- mobile layer reduction
+- no new raster artwork and no Live2D / WebGL dependency
+
 ## 1. Direction
 
 The current Hero already has a strong composition:
@@ -36,14 +57,18 @@ This plan extends `MOTION_SPEC.md` and keeps its restrictions:
 Current runtime Hero implementation:
 
 - `src/components/brand/BrandSite.tsx`
+- `src/components/brand/BrandHero.tsx`
+- `src/components/brand/HeroMotionStage.tsx`
+- `src/components/brand/HeroSignalOverlay.tsx`
+- `src/components/brand/useHeroMotion.ts`
+- `src/components/brand/heroSignal.ts`
 - `src/brand.css`
+- `src/hero-motion.css`
 - `src/mobile.css`
 - `public/brand/resona-hero-desktop-hq.webp`
 - `public/brand/resona-hero-desktop.png`
-- existing CSS ambient drift
-- existing signal-line animation
 
-Current Hero is still a single composite artwork. Therefore the first implementation phase must not assume editable PSD / Live2D source layers.
+Current Hero is still a single composite artwork. Therefore the first implementation phase does not assume editable PSD / Live2D source layers.
 
 ## 3. Motion architecture
 
@@ -110,7 +135,7 @@ Suggested state vocabulary:
 | Product state | Hero response |
 |---|---|
 | idle / ready | ambient drift only |
-| playing | waveform / signal intensity follows playback energy where practical |
+| playing | waveform / signal intensity response |
 | rendering | one restrained scan pass |
 | inspecting | frequency / grid overlay becomes slightly more visible |
 | optimizing | violet-to-mint signal sweep, localized only |
@@ -120,9 +145,18 @@ Suggested state vocabulary:
 
 The artwork itself should remain visually stable during state changes.
 
+The runtime semantic bridge is exposed through `heroSignal.ts`:
+
+```ts
+emitHeroSignal({ state: 'optimizing' })
+emitHeroSignal({ state: 'verified' })
+```
+
+Continuous values (`energy`, `highRatio`, `lowRatio`) are accepted for Milestone D without coupling the Hero to DSP internals.
+
 ## 4. Phase 1 — Single-image 2.5D Hero
 
-This phase requires **no new generated artwork** and should be implemented first.
+This phase requires **no new generated artwork**.
 
 ### 4.1 Keep the composite Hero image as the base plane
 
@@ -134,31 +168,32 @@ public/brand/resona-hero-desktop-hq.webp
 
 as the visual source of truth.
 
-Convert `HeroArtwork()` from a single picture-only element into a layered Hero stage:
+Runtime stage:
 
 ```text
 brand-hero__stage
  ├─ brand-hero__art-base
  ├─ brand-hero__depth-light
- ├─ brand-hero__hud-back
- ├─ brand-hero__hud-front
+ ├─ brand-hero__signal-stack
+ │   ├─ SVG HUD back plane
+ │   ├─ SVG HUD front plane
+ │   ├─ scan line
+ │   └─ state pulse
  └─ brand-hero__foreground-fx
 ```
 
-The additional layers should initially be CSS / SVG signal layers rather than duplicated raster characters.
+### 4.2 Dynamic HUD elements
 
-### 4.2 Rebuild dynamic HUD elements outside the raster image
+Current A+B overlay includes:
 
-Overlay selected RESONA visual language using SVG / CSS:
-
-- horizontal waveform trace
+- horizontal waveform traces
 - frequency ticks
-- thin routing lines
+- routing line
 - small signal nodes
 - scan line
 - phase-violet data fragments
 
-These layers can move independently and create depth without needing to cut the character artwork immediately.
+These layers move independently and create depth without cutting the character artwork.
 
 ### 4.3 Preserve text stability
 
@@ -188,7 +223,7 @@ public/brand/hero/layers/
 ├─ hero-left-hair-front.webp
 ├─ hero-left-ear-module.webp
 ├─ hero-foreground.webp
-└─ hero-mask.webp          # optional depth / lighting helper
+└─ hero-mask.webp
 ```
 
 ### 5.1 Layer movement limits
@@ -204,8 +239,6 @@ Recommended maximum desktop travel:
 | front hair | 5–7 px | 3 px | <= 0.35° |
 | ear module / mint accents | 4–6 px | 2 px | <= 0.25° |
 | foreground FX | 6–8 px | 4 px | <= 0.4° |
-
-These values are intentionally small.
 
 ### 5.2 Character animation policy
 
@@ -225,13 +258,9 @@ Not allowed by default:
 - chest / body breathing loop
 - exaggerated hair physics
 
-If facial animation is ever explored, it should be an optional later experiment and must not redefine the brand motion language.
-
 ## 6. Mobile behavior
 
 Mobile is not a reduced desktop parallax implementation.
-
-### 6.1 Mobile motion model
 
 Use:
 
@@ -243,34 +272,21 @@ very small touch response
 product-state signal response
 ```
 
-Do not rely on hover.
+Do not rely on hover and do not request device-orientation permission.
 
-Do not request device-orientation permission for the default experience.
+Current A+B mobile behavior:
 
-### 6.2 Touch response
-
-On touch inside Hero:
-
-- target offset follows touch position at <= 2–3 px
-- release returns to neutral with spring / damping
-- no persistent tracking after `touchend` / pointer release
-
-### 6.3 Mobile performance
-
-On <= 720 px:
-
-- reduce animated layer count
-- disable expensive blur animation
-- avoid continuously animated large SVG filters
-- reduce signal-node count
-- stop pointer RAF loop when no interaction requires it
-- pause ambient motion when document is hidden where practical
-
-The current HQ WebP may remain the image source while crop is controlled in CSS, unless a future dedicated mobile art crop is approved.
+- pointer/touch travel is reduced
+- background motion remains shallow
+- back-grid HUD plane is hidden
+- data fragments are hidden
+- signal nodes are reduced
+- large blur animation is avoided
+- `touch-action: pan-y` preserves page scrolling
 
 ## 7. React implementation shape
 
-Recommended component structure:
+Implemented structure:
 
 ```text
 src/components/brand/
@@ -278,14 +294,13 @@ src/components/brand/
 ├─ BrandHero.tsx
 ├─ HeroMotionStage.tsx
 ├─ HeroSignalOverlay.tsx
+├─ heroSignal.ts
 └─ useHeroMotion.ts
 ```
 
-`BrandSite.tsx` should remain composition-focused.
+`BrandSite.tsx` remains composition-focused.
 
-### 7.1 `useHeroMotion.ts`
-
-Responsibilities:
+`useHeroMotion.ts` handles:
 
 - pointer normalization
 - touch / pointer lifecycle
@@ -294,43 +309,11 @@ Responsibilities:
 - document visibility handling
 - CSS variable output
 
-Recommended output through CSS custom properties:
-
-```text
---hero-x
---hero-y
---hero-bg-x
---hero-bg-y
---hero-fg-x
---hero-fg-y
---hero-signal-intensity
-```
-
-Prefer CSS transforms driven by variables rather than React state updates every frame.
-
-### 7.2 Animation loop
-
-Use one `requestAnimationFrame` loop only while necessary.
-
-Avoid rerendering React components every animation frame.
-
-Pseudo-flow:
-
-```text
-pointer event
-   ↓
-update target ref
-   ↓
-RAF interpolates current ref
-   ↓
-set CSS custom properties on stage element
-```
+Animation does not set React state every frame.
 
 ## 8. Integration with RESONA audio / workflow state
 
-Do not tightly couple the brand Hero directly to DSP internals.
-
-Expose a small semantic Hero state interface:
+The Hero consumes a semantic state interface instead of DSP internals:
 
 ```ts
 export type HeroSignalState =
@@ -348,47 +331,42 @@ Optional continuous values:
 
 ```ts
 type HeroSignalMetrics = {
-  energy?: number;      // normalized 0..1
-  highRatio?: number;   // normalized 0..1
-  lowRatio?: number;    // normalized 0..1
+  energy?: number;
+  highRatio?: number;
+  lowRatio?: number;
 };
 ```
 
-The brand component consumes semantic state; Sound Lab remains the source of truth.
+Milestone B provides the event API and visual state consumers. Wiring detailed Sound Lab metrics into these values remains Milestone D so decorative motion cannot interfere with core audio work.
 
 ## 9. Performance budget
 
 Desktop target:
 
 - 60 fps on normal integrated graphics
-- no layout changes in continuous loops
-- only `transform`, `opacity`, CSS variables and cheap compositing in hot paths
+- no layout changes in continuous pointer loops
+- hot path restricted to CSS variable writes and transforms
 
 Mobile target:
 
 - visually stable on mainstream iPhone / Android hardware
-- no continuous CPU work when Hero is outside viewport if practical
+- no pointer RAF loop after motion settles
+- no pointer RAF work while document is hidden
 - animation must not compete with Sound Lab offline rendering / Inspector analysis
-
-Important: audio rendering and analysis take priority over decorative Hero motion.
-
-When heavy Sound Lab work begins, Hero ambient animation may be reduced or temporarily paused.
 
 ## 10. Accessibility
 
-Mandatory:
+Implemented baseline:
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  /* disable Hero parallax / ambient motion */
+  /* Hero transforms / ambient animations disabled */
 }
 ```
 
-The Hero must remain fully understandable with all motion disabled.
+Decorative motion remains `aria-hidden="true"`.
 
-Decorative motion layers remain `aria-hidden="true"`.
-
-Pointer motion must never be required to reveal content or actions.
+Pointer motion is not required to reveal content or actions.
 
 ## 11. Asset-production plan
 
@@ -409,39 +387,35 @@ Required source categories:
 
 Do not commit crude automatic cutouts as canonical runtime assets.
 
-Each extracted layer should be visually reviewed at:
-
-- desktop 1440–1920 px width
-- tablet ~768–1024 px
-- mobile 360–430 px
-
 ## 12. Implementation sequence
 
-### Milestone A — motion scaffold
+### Milestone A — motion scaffold ✅
 
-- extract `BrandHero` from `BrandSite.tsx`
-- add `HeroMotionStage`
-- add pointer / touch CSS-variable motion
-- keep current composite artwork
-- preserve current visual appearance when motion is idle
+- extracted `BrandHero` from `BrandSite.tsx`
+- added `HeroMotionStage`
+- added pointer / touch CSS-variable motion
+- retained current composite artwork
+- kept headline / CTA stable
 
-### Milestone B — signal depth
+### Milestone B — signal depth ✅
 
-- add SVG signal / waveform overlay layers
-- add scan response
-- connect semantic Hero states
-- verify reduced motion
+- added SVG signal / waveform overlay layers
+- added scan / optimize / verified / warning / error responses
+- added semantic Hero signal API
+- added reduced-motion handling
+- added mobile layer simplification
 
 ### Milestone C — layered artwork
 
 - create approved layered assets
 - add separate character / background planes
 - add restrained hair / clothing inertia
-- mobile simplification
+- mobile simplification review
 
 ### Milestone D — audio-reactive refinement
 
-- optionally map playback energy to waveform / signal intensity
+- map playback energy to waveform / signal intensity
+- wire Sound Lab semantic states directly
 - do not deform the character from raw audio metrics
 - ensure Sound Lab performance remains unaffected
 
@@ -465,7 +439,6 @@ Verify:
 
 - headline never shifts with parallax
 - CTA remains clickable during motion
-- no layer reveals unpainted / transparent holes
 - no horizontal overflow
 - touch scrolling is never captured accidentally
 - Hero motion does not degrade slider interaction in Sound Lab
@@ -486,7 +459,7 @@ The implementation is successful when:
 
 ## 15. Non-goals for the first implementation
 
-Do not add in the first pass:
+Not added:
 
 - Live2D Cubism dependency
 - WebGL / Three.js
@@ -499,4 +472,4 @@ Do not add in the first pass:
 - gyroscope permission
 - audio-driven character deformation
 
-The first implementation should prove that **layering + restrained inertia + RESONA signal animation** is enough.
+The first implementation proves **layering + restrained inertia + RESONA signal animation** before layered character artwork is introduced.

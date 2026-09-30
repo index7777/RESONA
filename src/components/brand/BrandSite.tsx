@@ -1,10 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ArrowDown } from 'lucide-react';
+import { BrandHero } from './BrandHero';
 
-const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
-const HERO_DESKTOP = asset('brand/resona-hero-desktop-hq.webp');
-const HERO_MOBILE = HERO_DESKTOP;
-const HERO_FALLBACK = asset('brand/resona-hero-fallback.svg');
 const INTRO_KEY = 'resona:intro-seen';
 
 function GithubIcon({ size = 15 }: { size?: number }) {
@@ -52,36 +48,6 @@ function SiteHeader() {
         <a href="https://github.com/index7777/RESONA" target="_blank" rel="noreferrer"><GithubIcon /> GitHub</a>
       </nav>
     </header>
-  );
-}
-
-function HeroArtwork() {
-  const [failed, setFailed] = useState(false);
-  return (
-    <picture className="brand-hero__art" aria-hidden="true">
-      {!failed && <source media="(max-width: 720px)" srcSet={HERO_MOBILE} type="image/webp" />}
-      <img src={failed ? HERO_FALLBACK : HERO_DESKTOP} alt="" decoding="async" fetchPriority="high" onError={() => setFailed(true)} />
-    </picture>
-  );
-}
-
-function BrandHero() {
-  return (
-    <section className="brand-hero" aria-labelledby="brand-hero-title">
-      <HeroArtwork />
-      <div className="brand-hero__scrim" />
-      <div className="brand-hero__signals" aria-hidden="true"><span /><span /><span /></div>
-      <div className="brand-hero__content">
-        <p className="brand-hero__eyebrow">PROGRAMMABLE AUDIO</p>
-        <h1 id="brand-hero-title">Sound, as code.</h1>
-        <p className="brand-hero__lede">Build, inspect, iterate and export audio from structured definitions.</p>
-        <div className="brand-hero__actions">
-          <a className="brand-hero__primary" href="#workspace">Open Workbench <ArrowDown size={16} /></a>
-          <a className="brand-hero__secondary" href="https://github.com/index7777/RESONA" target="_blank" rel="noreferrer">View GitHub <GithubIcon /></a>
-        </div>
-      </div>
-      <div className="brand-hero__rail" aria-hidden="true"><span>DEFINE</span><i /><span>RENDER</span><i /><span>INSPECT</span><i /><span>SHIP</span></div>
-    </section>
   );
 }
 
