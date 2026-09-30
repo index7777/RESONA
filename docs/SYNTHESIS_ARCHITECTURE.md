@@ -1,6 +1,6 @@
 # RESONA — Synthesis Architecture Expansion Plan
 
-> Implementation decision record. Defines how RESONA expands beyond oscillator/noise-centric DSP. This is a plan, not a claim that these engines already exist.
+> Implementation decision record. Defines how RESONA expands beyond oscillator/noise-centric DSP.\n>\n> **Status (v0.2.0):** IR v3 is now implemented in `src/engine/` with versioned v2 coexistence, modal synthesis, Karplus–Strong, stochastic grains, event groups and procedural room processing. Still pending: sample source/asset manifest, external-IR convolution, deeper engine-aware analyzer rules and later synthesis families.
 
 ## Goal
 
