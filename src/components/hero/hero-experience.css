@@ -1,4 +1,14 @@
 .hero-experience { --hero-x: 0px; --hero-y: 0px; overflow: hidden; contain: layout paint; }
+.hero-reference__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; opacity: 0; transition: opacity .25s ease-out; }
+.hero-reference[data-video-visible="true"] .hero-reference__video { opacity: 1; }
+.hero-reference .hero-stage__image { animation: none !important; transform: none; }
+.hero-reference .brand-hero__content, .hero-reference .brand-hero__rail { transition: opacity .8s ease-out; }
+.hero-reference:is([data-phase="intro"], [data-phase="transition"]) .brand-hero__content, .hero-reference:is([data-phase="intro"], [data-phase="transition"]) .brand-hero__rail { opacity: 0; pointer-events: none; }
+.hero-reference::after { content: ''; position: absolute; z-index: 4; inset: 0; background: #020406; pointer-events: none; opacity: 0; transition: opacity .16s ease-in-out; }
+.hero-reference[data-settling="true"]::after { opacity: 1; }
+.hero-reference[data-video-visible="false"] .hero-reference__video { visibility: hidden; }
+@media(max-width: 720px) { .hero-reference__video { object-position: 32% center; } }
+@media(prefers-reduced-motion: reduce) { .hero-reference__video, .hero-reference .brand-hero__content, .hero-reference .brand-hero__rail { transition: none; } }
 .hero-stage { position: absolute; z-index: -4; inset: 0; overflow: hidden; background: #05080d; }
 .hero-stage__camera { position: absolute; inset: 0; }
 .hero-stage__image { width: 100%; height: 100%; object-fit: cover; object-position: center; transform: scale(1.015) translate(var(--hero-x), var(--hero-y)); }

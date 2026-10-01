@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { useI18n } from '../../i18n';
-import { HeroExperience } from '../hero/HeroExperience';
+import { HeroMotionExperience } from '../hero/HeroMotionExperience';
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
 const CHARACTER_MASTER = asset('brand/resona-hero-desktop.png');
@@ -70,5 +70,5 @@ function CharacterSection() {
 }
 
 export function BrandSite({ children }: { children: ReactNode }) {
-  return <div id="top" className="brand-site"><SiteHeader /><HeroExperience /><section id="workspace" className="brand-workspace" aria-label="RESONA workbench">{children}</section><CharacterSection /></div>;
+  return <div id="top" className="brand-site"><SiteHeader /><HeroMotionExperience /><section id="workspace" className="brand-workspace" aria-label="RESONA workbench">{children}</section><CharacterSection /></div>;
 }
