@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
@@ -64,6 +65,7 @@ const S = ({
   </label>
 );
 export function App() {
+  const { t, text } = useI18n();
   const [s, setS] = useState<Sound>(defaultSound),
     [prompt, setPrompt] = useState("sci-fi laser"),
     [status, setStatus] = useState("Ready"),
@@ -313,29 +315,29 @@ export function App() {
           </div>
           <div>
             <h1>RESONA</h1>
-            <p>Agent Sound Workbench</p>
+            <p>{t("sound.workbench")}</p>
           </div>
         </div>
         <div className="actions">
           <button onClick={vary}>
             <Shuffle size={15} />
-            Variation
+            {t("sound.variation")}
           </button>
           <button disabled={optimizing} onClick={optimize}>
             <Sparkles size={15} />
-            {optimizing ? "Optimizing…" : "Agent Optimize"}
+            {t(optimizing ? "sound.optimizing" : "sound.optimize")}
           </button>
           <button onClick={exp}>
             <Download size={15} />
-            Export
+            {t("common.export")}
           </button>
           <button onClick={stop}>
             <Square size={15} />
-            Stop
+            {t("common.stop")}
           </button>
           <button className="primary" onClick={play}>
             <Play size={15} />
-            Play
+            {t("common.play")}
           </button>
         </div>
       </header>
@@ -357,23 +359,23 @@ export function App() {
             setS(compileSound(prompt).sound);
           }}
         >
-          Generate DSP
+          {t("sound.generate")}
         </button>
       </section>
       <section className="flowbar">
-        <span>1 Describe</span>
-        <span>2 Generate</span>
-        <span>3 Inspect & Play</span>
-        <span>4 Optimize</span>
-        <span>5 Export</span>
+        <span>{t("sound.flow.describe")}</span>
+        <span>{t("sound.flow.generate")}</span>
+        <span>{t("sound.flow.inspect")}</span>
+        <span>{t("sound.flow.optimize")}</span>
+        <span>{t("sound.flow.export")}</span>
         <button onClick={() => setAdvanced((x) => !x)}>
-          {advanced ? "Hide Advanced" : "Advanced"}
+          {t(advanced ? "sound.hideAdvanced" : "sound.advanced")}
         </button>
       </section>
       <section className="presetbar">
         <span>
           <Library size={15} />
-          Presets
+          {t("sound.presets")}
         </span>
         {libraryOrder.map((id) => (
           <button
@@ -390,7 +392,7 @@ export function App() {
       <section className="presetbar physical">
         <span>
           <Library size={15} />
-          Physical · IR v3
+          {text("Physical")} · IR v3
         </span>
         {physicalOrder.map((id) => (
           <button
@@ -412,15 +414,13 @@ export function App() {
       </section>
       <section className="hero-panel">
         <div>
-          <p className="eyebrow">Agent-ready procedural audio</p>
+          <p className="eyebrow">{t("sound.agentReady")}</p>
           <h2>{s.name}</h2>
           <p className="subtitle">
-            Import, edit and copy RESONA DSL; generate controlled variations;
-            preview the rendered waveform; export the exact same engine output
-            to WAV.
+            {t("sound.subtitle")}
           </p>
         </div>
-        <div className="status">{status}</div>
+        <div className="status">{text(status)}</div>
       </section>
       <SoundLabAnalysis
         sound={s}

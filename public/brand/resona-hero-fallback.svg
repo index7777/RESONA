@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2172 724" role="img" aria-label="RESONA signal field">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#05080d"/>
+      <stop offset=".55" stop-color="#0b0f14"/>
+      <stop offset="1" stop-color="#151b26"/>
+    </linearGradient>
+    <linearGradient id="signal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5ef2ce" stop-opacity="0"/>
+      <stop offset=".35" stop-color="#5ef2ce" stop-opacity=".85"/>
+      <stop offset=".72" stop-color="#806cff" stop-opacity=".7"/>
+      <stop offset="1" stop-color="#806cff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="mintGlow" cx="30%" cy="50%" r="48%">
+      <stop offset="0" stop-color="#5ef2ce" stop-opacity=".14"/>
+      <stop offset="1" stop-color="#5ef2ce" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#dce8f5" stroke-opacity=".035"/>
+    </pattern>
+  </defs>
+  <rect width="2172" height="724" fill="url(#bg)"/>
+  <rect width="2172" height="724" fill="url(#grid)"/>
+  <rect width="2172" height="724" fill="url(#mintGlow)"/>
+  <g fill="none" stroke-linecap="round">
+    <path d="M80 370 C240 370 270 300 360 300 S500 440 610 370 760 240 860 370 1010 500 1120 370 1260 275 1360 370 1520 430 1630 370 1790 330 2090 370" stroke="url(#signal)" stroke-width="3" opacity=".78"/>
+    <path d="M60 392 C230 392 330 360 445 392 S670 430 790 392 990 350 1130 392 1410 430 1590 392 1840 352 2110 392" stroke="#5ef2ce" stroke-opacity=".16" stroke-width="1.5"/>
+    <circle cx="1660" cy="240" r="138" stroke="#f4f6f8" stroke-opacity=".06" stroke-width="1"/>
+    <circle cx="1660" cy="240" r="88" stroke="#806cff" stroke-opacity=".14" stroke-width="1.5" stroke-dasharray="6 12"/>
+  </g>
+  <g fill="#5ef2ce" opacity=".5">
+    <circle cx="610" cy="370" r="4"/>
+    <circle cx="1120" cy="370" r="4"/>
+    <circle cx="1630" cy="370" r="4"/>
+  </g>
+</svg>

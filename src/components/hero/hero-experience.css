@@ -1,0 +1,42 @@
+.hero-experience { --hero-x: 0px; --hero-y: 0px; overflow: hidden; contain: layout paint; }
+.hero-stage { position: absolute; z-index: -4; inset: 0; overflow: hidden; background: #05080d; }
+.hero-stage__camera { position: absolute; inset: 0; }
+.hero-stage__image { width: 100%; height: 100%; object-fit: cover; object-position: center; transform: scale(1.015) translate(var(--hero-x), var(--hero-y)); }
+.hero-experience[data-phase="idle"] .hero-stage__image { animation: hero-drift 28s ease-in-out infinite alternate; }
+.hero-atmosphere { position: absolute; inset: 0; pointer-events: none; }
+.hero-atmosphere i { position: absolute; bottom: -5px; width: 2px; height: 2px; border-radius: 50%; background: #94d3c7; opacity: 0; animation: hero-mote 17s linear infinite; }
+.hero-lighting { position: absolute; inset: 0; background: radial-gradient(ellipse at 78% 18%, rgba(207,219,244,.14), transparent 48%); opacity: .25; animation: hero-light 18s ease-in-out infinite alternate; pointer-events: none; }
+.hero-intro { position: absolute; z-index: 5; inset: 0; pointer-events: none; overflow: hidden; }
+.hero-experience[data-phase="idle"] .hero-intro, .hero-experience[data-phase="loading"] .hero-intro { visibility: hidden; }
+.intro-black, .intro-panel, .intro-sweep, .intro-hit, .intro-wordmark, .intro-montage { position: absolute; inset: 0; opacity: 0; }
+.intro-black { background: #020406; }
+.intro-panel { background-repeat: no-repeat; }
+.intro-panel--eye { background-size: 180% auto; background-position: 0 38%; clip-path: polygon(0 0, 74% 0, 62% 100%, 0 100%); }
+.intro-panel--side { background-size: 180% auto; background-position: 100% 65%; clip-path: polygon(28% 0, 100% 0, 100% 100%, 40% 100%); }
+.intro-sweep { background: linear-gradient(110deg, transparent 44%, rgba(209,225,235,.7) 49%, transparent 54%); }
+.intro-hit { background: #dde5e9; }
+.intro-wordmark { display: grid; place-items: center; color: #f4f6f8; }
+.intro-wordmark span { font-size: clamp(64px, 11vw, 160px); letter-spacing: .15em; padding-left: .15em; font-weight: 500; }
+.intro-fragment { position: absolute; background-repeat: no-repeat; border: 1px solid rgba(220,232,239,.35); }
+.intro-montage { background: rgba(2,4,6,.72); }
+.hero-title-part { display: inline-block; }
+.intro-fragment--eye { left: -2%; top: 4%; width: 44%; height: 55%; background-size: 270% auto; background-position: 0 28%; clip-path: polygon(0 0,100% 5%,85% 100%,0 91%); }
+.intro-fragment--signal { left: 29%; top: 52%; width: 47%; height: 37%; background-size: 270% auto; background-position: 67% 18%; clip-path: polygon(9% 0,100% 0,91% 100%,0 100%); }
+.intro-fragment--side { right: -2%; top: 15%; width: 38%; height: 66%; background-size: 265% auto; background-position: 100% 65%; clip-path: polygon(9% 0,100% 0,100% 100%,0 91%); }
+.hero-skip { position: absolute; z-index: 6; bottom: 22px; right: 24px; background: rgba(5,8,13,.75); border: 1px solid rgba(244,246,248,.25); color: #e4e9ee; font-size: 12px; padding: 9px 14px; }
+.hero-skip:focus-visible { outline: 2px solid #5ef2ce; outline-offset: 4px; }
+.hero-experience[data-phase="intro"] .brand-hero__content, .hero-experience[data-phase="intro"] .brand-hero__rail { opacity: 0; }
+@keyframes hero-drift { from { transform: scale(1.015) translate(var(--hero-x), var(--hero-y)); } to { transform: scale(1.028) translate(calc(var(--hero-x) - 3px), calc(var(--hero-y) + 3px)); } }
+@keyframes hero-mote { 0% { transform: translate(0,0); opacity: 0; } 20% { opacity: .38; } 80% { opacity: .12; } 100% { transform: translate(20px,-650px); opacity: 0; } }
+@keyframes hero-light { from { opacity: .15; transform: translateX(-1%); } to { opacity: .4; transform: translateX(1%); } }
+@media(max-width: 1023px) { .intro-fragment--signal { display: none; } .hero-atmosphere i:nth-child(n+5) { display: none; } }
+@media(max-width: 720px) {
+  .hero-stage__image { object-position: 31% center; }
+  .intro-panel--eye { background-size: auto 115%; background-position: 18% center; clip-path: polygon(0 0,100% 0,100% 70%,0 85%); }
+  .intro-panel--side { background-size: auto 120%; background-position: 86% center; clip-path: polygon(0 18%,100% 3%,100% 100%,0 100%); }
+  .intro-fragment--eye { top: 4%; width: 75%; height: 49%; background-size: auto 150%; background-position: 17% 28%; }
+  .intro-fragment--side { top: 43%; width: 72%; height: 53%; background-size: auto 130%; background-position: 87% center; }
+  .intro-wordmark span { font-size: 16vw; letter-spacing: .1em; }
+  .hero-skip { right: 14px; bottom: 16px; }
+}
+@media(prefers-reduced-motion: reduce) { .hero-stage__image, .hero-atmosphere i, .hero-lighting { animation: none !important; transform: none !important; } .hero-intro { display: none; } }

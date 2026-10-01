@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import { Copy, Plus, Trash2, Upload } from "lucide-react";
 import type { Sound, SoundDefinition, Waveform } from "./audio";
 import { ProgramPanel } from "./ProgramPanel";
@@ -60,6 +61,7 @@ export function SoundLabAdvanced({
   apply,
   setStatus,
 }: Props) {
+  const { t, text } = useI18n();
   if (!advanced) return null;
   return (
     <>
@@ -76,7 +78,7 @@ export function SoundLabAdvanced({
           <>
             <div className="panel">
               <div className="panel-title">
-                <span>Layers</span>
+                <span>{t("sound.layers")}</span>
                 <button
                   className="mini"
                   onClick={() =>
@@ -116,7 +118,7 @@ export function SoundLabAdvanced({
                   }
                 >
                   <Plus size={14} />
-                  Layer
+                  {t("sound.addLayer")}
                 </button>
               </div>
               {s.layers.map((l, i) => (
@@ -359,8 +361,8 @@ export function SoundLabAdvanced({
             </div>
             <div className="panel">
               <div className="panel-title">
-                <span>Master DSP</span>
-                <small>FX chain</small>
+                <span>{t("sound.masterDsp")}</span>
+                <small>{t("sound.fxChain")}</small>
               </div>
               <S
                 label="Master gain"
@@ -456,14 +458,14 @@ export function SoundLabAdvanced({
         )}
         <div className="panel code-panel">
           <div className="panel-title">
-            <span>RESONA DSL</span>
-            <small>editable agent contract</small>
+            <span>{t("sound.dsl")}</span>
+            <small>{t("sound.dslContract")}</small>
           </div>
           <textarea value={dsl} onChange={(e) => setDsl(e.target.value)} />
           <div className="dsl-actions">
             <button onClick={apply}>
               <Upload size={14} />
-              Load JSON
+              {t("sound.loadJson")}
             </button>
             <button
               onClick={async () => {
@@ -472,7 +474,7 @@ export function SoundLabAdvanced({
               }}
             >
               <Copy size={14} />
-              Copy JSON
+              {t("common.copyJson")}
             </button>
           </div>
         </div>

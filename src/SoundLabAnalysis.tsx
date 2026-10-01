@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import type { RefObject } from "react";
 import type { Sound } from "./audio";
 import type { AudioMetrics } from "./inspector";
@@ -34,6 +35,7 @@ export function SoundLabAnalysis({
   onAutoFix,
   onSurgicalFix,
 }: Props) {
+  const { t, text } = useI18n();
   return (
     <>
       {optimization ? (
@@ -73,56 +75,56 @@ export function SoundLabAnalysis({
       <section className="inspector panel">
         <div className="panel-title">
           <span>
-            RESONA Inspector · seed {sound.seed}{" "}
+            {t("sound.inspector")} · {t("music.seed")} {sound.seed}{" "}
             <button
               className="mini fix"
               disabled={!metrics || metrics.status === "clean"}
               onClick={onAutoFix}
             >
-              Auto-Fix
+              {t("sound.autoFix")}
             </button>
           </span>
           <small className={metrics?.status}>
-            {metrics?.status ?? "rendering"}
+            {text(metrics?.status ?? "rendering")}
           </small>
         </div>
         <div className="metric-grid">
           <div>
-            <small>Peak</small>
+            <small>{t("metric.peak")}</small>
             <strong>{metrics ? fmtDb(metrics.peakDb) : "—"}</strong>
           </div>
           <div>
-            <small>RMS</small>
+            <small>{t("metric.rms")}</small>
             <strong>{metrics ? fmtDb(metrics.rmsDb) : "—"}</strong>
           </div>
           <div>
-            <small>Crest</small>
+            <small>{t("metric.crest")}</small>
             <strong>
               {metrics ? `${metrics.crestDb.toFixed(1)} dB` : "—"}
             </strong>
           </div>
           <div>
-            <small>DC offset</small>
+            <small>{t("metric.dc")}</small>
             <strong>{metrics ? metrics.dc.toFixed(4) : "—"}</strong>
           </div>
           <div>
-            <small>Clipped</small>
+            <small>{t("metric.clipped")}</small>
             <strong>{metrics?.clipped ?? "—"}</strong>
           </div>
         </div>
         <div className="spectral-grid">
           <div>
-            <small>Centroid</small>
+            <small>{t("metric.centroid")}</small>
             <strong>
               {metrics ? `${Math.round(metrics.centroidHz)} Hz` : "—"}
             </strong>
           </div>
           <div>
-            <small>Sub &lt;120 Hz</small>
+            <small>{t("metric.sub")}</small>
             <strong>{metrics ? fmtPct(metrics.lowRatio) : "—"}</strong>
           </div>
           <div>
-            <small>Air &gt;10 kHz</small>
+            <small>{t("metric.air")}</small>
             <strong>{metrics ? fmtPct(metrics.highRatio) : "—"}</strong>
           </div>
         </div>
@@ -133,18 +135,18 @@ export function SoundLabAnalysis({
             ))}
           </div>
         ) : (
-          <div className="issues clean">No configured anomalies detected.</div>
+          <div className="issues clean">{t("sound.noAnomaly")}</div>
         )}
       </section>
       {report ? (
         <section className="iteration panel">
           <div className="panel-title">
-            <span>Agent Iteration Report</span>
+            <span>{t("sound.iterationReport")}</span>
             <button
               className="mini"
               onClick={() => downloadReport(report, sound.name)}
             >
-              JSON Report
+              {t("common.jsonReport")}
             </button>
           </div>
           <div className="iteration-row">
@@ -162,11 +164,11 @@ export function SoundLabAnalysis({
       ) : null}
       <section className="spectrogram-panel panel">
         <div className="panel-title">
-          <span>Time–Frequency Inspector</span>
+          <span>{t("sound.timeFrequency")}</span>
           <small>
             {bursts.length
               ? `${bursts.length} burst${bursts.length > 1 ? "s" : ""}`
-              : "no HF bursts"}
+              : t("sound.noBursts")}
           </small>
         </div>
         <canvas ref={spectrogramRef} width={1200} height={260} />
@@ -185,13 +187,13 @@ export function SoundLabAnalysis({
       </section>
       <section className="attribution panel">
         <div className="panel-title">
-          <span>Layer Attribution</span>
+          <span>{t("sound.layerAttribution")}</span>
           <button
             className="mini fix"
             disabled={!attribution[0] || attribution[0].score < 0.08}
             onClick={onSurgicalFix}
           >
-            Surgical Fix
+            {t("sound.surgicalFix")}
           </button>
         </div>
         {attribution.map((item, index) => (
@@ -213,8 +215,8 @@ export function SoundLabAnalysis({
       </section>
       <section className="wave-panel panel">
         <div className="panel-title">
-          <span>Rendered waveform</span>
-          <small>48 kHz offline render</small>
+          <span>{t("sound.waveform")}</span>
+          <small>{t("sound.waveformMeta")}</small>
         </div>
         <canvas ref={waveformRef} width={1200} height={180} />
       </section>
