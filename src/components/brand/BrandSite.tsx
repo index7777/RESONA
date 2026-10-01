@@ -1,9 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ArrowDown } from 'lucide-react';
+import { useI18n } from '../../i18n';
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
 const HERO_DESKTOP = asset('brand/resona-hero-desktop-hq.webp');
 const HERO_MOBILE = HERO_DESKTOP;
+const CHARACTER_MASTER = asset('brand/resona-hero-desktop.png');
 const HERO_FALLBACK = asset('brand/resona-hero-fallback.svg');
 const INTRO_KEY = 'resona:intro-seen';
 
@@ -44,12 +46,19 @@ function IntroGate() {
 }
 
 function SiteHeader() {
+  const { locale, setLocale, t } = useI18n();
   return (
     <header className="site-header">
       <a className="site-header__brand" href="#top" aria-label="RESONA home"><ResonanceMark compact /><span>RESONA</span></a>
       <nav className="site-header__nav" aria-label="Primary">
-        <a href="#workspace">Workbench</a>
-        <a href="https://github.com/index7777/RESONA" target="_blank" rel="noreferrer"><GithubIcon /> GitHub</a>
+        <a href="#workspace">{t('nav.workbench')}</a>
+        <a href="#character">{t('nav.character')}</a>
+        <a href="https://github.com/index7777/RESONA" target="_blank" rel="noreferrer"><GithubIcon /> {t('nav.github')}</a>
+        <div className="locale-switch" role="group" aria-label={t('locale.label')}>
+          <button className={locale === 'zh-TW' ? 'active' : ''} onClick={() => setLocale('zh-TW')} aria-pressed={locale === 'zh-TW'}>{t('locale.zh')}</button>
+          <span aria-hidden="true">/</span>
+          <button className={locale === 'en' ? 'active' : ''} onClick={() => setLocale('en')} aria-pressed={locale === 'en'}>{t('locale.en')}</button>
+        </div>
       </nav>
     </header>
   );
@@ -66,25 +75,52 @@ function HeroArtwork() {
 }
 
 function BrandHero() {
+  const { locale, t } = useI18n();
   return (
     <section className="brand-hero" aria-labelledby="brand-hero-title">
       <HeroArtwork />
       <div className="brand-hero__scrim" />
       <div className="brand-hero__signals" aria-hidden="true"><span /><span /><span /></div>
       <div className="brand-hero__content">
-        <p className="brand-hero__eyebrow">PROGRAMMABLE AUDIO</p>
-        <h1 id="brand-hero-title">Sound, as code.</h1>
-        <p className="brand-hero__lede">Build, inspect, iterate and export audio from structured definitions.</p>
+        <p className="brand-hero__eyebrow">{t('hero.eyebrow')}</p>
+        <h1 id="brand-hero-title">{t('hero.title')}</h1>
+        {locale === 'zh-TW' && <p className="brand-hero__english">{t('hero.titleAlt')}</p>}
+        <p className="brand-hero__lede">{t('hero.lede')}</p>
         <div className="brand-hero__actions">
-          <a className="brand-hero__primary" href="#workspace">Open Workbench <ArrowDown size={16} /></a>
-          <a className="brand-hero__secondary" href="https://github.com/index7777/RESONA" target="_blank" rel="noreferrer">View GitHub <GithubIcon /></a>
+          <a className="brand-hero__primary" href="#workspace">{t('hero.open')} <ArrowDown size={16} /></a>
+          <a className="brand-hero__secondary" href="https://github.com/index7777/RESONA" target="_blank" rel="noreferrer">{t('hero.github')} <GithubIcon /></a>
         </div>
       </div>
-      <div className="brand-hero__rail" aria-hidden="true"><span>DEFINE</span><i /><span>RENDER</span><i /><span>INSPECT</span><i /><span>SHIP</span></div>
+      <div className="brand-hero__rail" aria-hidden="true"><span>{t('hero.define')}</span><i /><span>{t('hero.render')}</span><i /><span>{t('hero.inspect')}</span><i /><span>{t('hero.ship')}</span></div>
+    </section>
+  );
+}
+
+function CharacterSection() {
+  const { t } = useI18n();
+  return (
+    <section id="character" className="character-section" aria-labelledby="character-title">
+      <div className="character-section__inner">
+        <div className="character-section__visual">
+          <div className="character-section__signal" aria-hidden="true" />
+          <img src={CHARACTER_MASTER} alt="RESONA character master" loading="lazy" decoding="async" />
+        </div>
+        <div className="character-section__copy">
+          <p className="character-section__eyebrow">{t('character.eyebrow')}</p>
+          <h2 id="character-title">{t('character.title')}</h2>
+          <p className="character-section__lede">{t('character.lede')}</p>
+          <blockquote>{t('character.quote')}</blockquote>
+          <div className="character-modules">
+            <article><span>01</span><h3>{t('character.identityTitle')}</h3><p>{t('character.identityBody')}</p></article>
+            <article><span>02</span><h3>{t('character.nodeTitle')}</h3><p>{t('character.nodeBody')}</p></article>
+            <article><span>03</span><h3>{t('character.coreTitle')}</h3><p>{t('character.coreBody')}</p></article>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
 
 export function BrandSite({ children }: { children: ReactNode }) {
-  return <div id="top" className="brand-site"><IntroGate /><SiteHeader /><BrandHero /><section id="workspace" className="brand-workspace" aria-label="RESONA workbench">{children}</section></div>;
+  return <div id="top" className="brand-site"><IntroGate /><SiteHeader /><BrandHero /><section id="workspace" className="brand-workspace" aria-label="RESONA workbench">{children}</section><CharacterSection /></div>;
 }

@@ -8,6 +8,7 @@ import { fixSong } from './autofix';
 import { downloadReport, iterationReport } from './report';
 import type { IterationReport } from './report';
 import { App as SoundLab } from './SoundLab';
+import { useI18n } from './i18n';
 
 const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const ws: Wave[] = ['sine', 'square', 'sawtooth', 'triangle'];
@@ -17,6 +18,7 @@ const LONG_PRESS_MS = 450;
 type SelectedNote = { track: number; step: number } | null;
 
 export function App() {
+  const { t } = useI18n();
   const [mode, setMode] = useState<'sound' | 'music'>('sound');
   const [song, setSong] = useState<Song>(defaultSong);
   const [cursor, setCursor] = useState(-1);
@@ -163,8 +165,8 @@ export function App() {
   if (mode === 'sound') {
     return <>
       <nav className="modebar">
-        <button className="active">Sound Lab</button>
-        <button onClick={() => setMode('music')}><Music size={14} />Music Lab</button>
+        <button className="active">{t('mode.sound')}</button>
+        <button onClick={() => setMode('music')}><Music size={14} />{t('mode.music')}</button>
       </nav>
       <SoundLab />
     </>;
@@ -175,41 +177,41 @@ export function App() {
 
   return <main className="shell">
     <nav className="modebar">
-      <button onClick={() => setMode('sound')}>Sound Lab</button>
-      <button className="active"><Music size={14} />Music Lab</button>
+      <button onClick={() => setMode('sound')}>{t('mode.sound')}</button>
+      <button className="active"><Music size={14} />{t('mode.music')}</button>
     </nav>
 
     <header className="topbar">
-      <div className="brand"><div className="brand-mark"><Music size={17} /></div><div><h1>RESONA</h1><p>BGM Composer</p></div></div>
+      <div className="brand"><div className="brand-mark"><Music size={17} /></div><div><h1>RESONA</h1><p>{t('music.composer')}</p></div></div>
       <div className="actions">
-        <button onClick={() => setSong(defaultSong)}><RotateCcw size={15} />Reset</button>
-        <button onClick={() => exportSong(song)}><Download size={15} />Export BGM</button>
-        <button onClick={stop}><Square size={15} />Stop</button>
-        <button className="primary" onClick={play}><Play size={15} />Play</button>
+        <button onClick={() => setSong(defaultSong)}><RotateCcw size={15} />{t('common.reset')}</button>
+        <button onClick={() => exportSong(song)}><Download size={15} />{t('music.export')}</button>
+        <button onClick={stop}><Square size={15} />{t('common.stop')}</button>
+        <button className="primary" onClick={play}><Play size={15} />{t('common.play')}</button>
       </div>
     </header>
 
     <section className="hero-panel">
-      <div><p className="eyebrow">Procedural game music</p><h2>{song.name}</h2><p className="subtitle">Multi-bar synth loops with key transpose, editable pitches, playback cursor and offline WAV rendering.</p></div>
+      <div><p className="eyebrow">{t('music.eyebrow')}</p><h2>{song.name}</h2><p className="subtitle">{t('music.subtitle')}</p></div>
       <div className="transport">
         <label>BPM<input type="number" min="50" max="220" value={song.bpm} onChange={e => setSong({ ...song, bpm: +e.target.value })} /></label>
-        <label>Bars<select value={song.bars} onChange={e => setSong({ ...song, bars: +e.target.value })}><option>1</option><option>2</option><option>4</option><option>8</option></select></label>
-        <label>Seed<input type="number" value={song.seed} onChange={e => setSong({ ...song, seed: +e.target.value || 0 })} /></label>
-        <label>Key<select value={song.key} onChange={e => setSong({ ...song, key: +e.target.value })}>{keys.map((k, i) => <option key={k} value={i}>{k}</option>)}</select></label>
+        <label>{t('music.bars')}<select value={song.bars} onChange={e => setSong({ ...song, bars: +e.target.value })}><option>1</option><option>2</option><option>4</option><option>8</option></select></label>
+        <label>{t('music.seed')}<input type="number" value={song.seed} onChange={e => setSong({ ...song, seed: +e.target.value || 0 })} /></label>
+        <label>{t('music.key')}<select value={song.key} onChange={e => setSong({ ...song, key: +e.target.value })}>{keys.map((k, i) => <option key={k} value={i}>{k}</option>)}</select></label>
       </div>
     </section>
 
     <section className="inspector panel">
-      <div className="panel-title"><span>Mix Inspector <button className="mini fix" disabled={!metrics || metrics.status === 'clean'} onClick={autoFix}>Auto-Fix Mix</button></span><small className={metrics?.status}>{metrics?.status ?? 'rendering'}</small></div>
-      <div className="metric-grid"><div><small>Peak</small><strong>{metrics ? fmtDb(metrics.peakDb) : '—'}</strong></div><div><small>RMS</small><strong>{metrics ? fmtDb(metrics.rmsDb) : '—'}</strong></div><div><small>Crest</small><strong>{metrics ? metrics.crestDb.toFixed(1) + ' dB' : '—'}</strong></div><div><small>DC</small><strong>{metrics ? metrics.dc.toFixed(4) : '—'}</strong></div><div><small>Clipped</small><strong>{metrics?.clipped ?? '—'}</strong></div></div>
-      <div className="spectral-grid"><div><small>Centroid</small><strong>{metrics ? Math.round(metrics.centroidHz) + ' Hz' : '—'}</strong></div><div><small>Sub &lt;120 Hz</small><strong>{metrics ? fmtPct(metrics.lowRatio) : '—'}</strong></div><div><small>Air &gt;10 kHz</small><strong>{metrics ? fmtPct(metrics.highRatio) : '—'}</strong></div></div>
+      <div className="panel-title"><span>{t('music.mixInspector')} <button className="mini fix" disabled={!metrics || metrics.status === 'clean'} onClick={autoFix}>{t('music.autoFix')}</button></span><small className={metrics?.status}>{metrics?.status ?? t('common.rendering')}</small></div>
+      <div className="metric-grid"><div><small>{t('metric.peak')}</small><strong>{metrics ? fmtDb(metrics.peakDb) : '—'}</strong></div><div><small>{t('metric.rms')}</small><strong>{metrics ? fmtDb(metrics.rmsDb) : '—'}</strong></div><div><small>{t('metric.crest')}</small><strong>{metrics ? metrics.crestDb.toFixed(1) + ' dB' : '—'}</strong></div><div><small>{t('metric.dc')}</small><strong>{metrics ? metrics.dc.toFixed(4) : '—'}</strong></div><div><small>{t('metric.clipped')}</small><strong>{metrics?.clipped ?? '—'}</strong></div></div>
+      <div className="spectral-grid"><div><small>{t('metric.centroid')}</small><strong>{metrics ? Math.round(metrics.centroidHz) + ' Hz' : '—'}</strong></div><div><small>{t('metric.sub')}</small><strong>{metrics ? fmtPct(metrics.lowRatio) : '—'}</strong></div><div><small>{t('metric.air')}</small><strong>{metrics ? fmtPct(metrics.highRatio) : '—'}</strong></div></div>
       {metrics?.issues.length ? <div className="issues">{metrics.issues.map(x => <span key={x}>{x}</span>)}</div> : null}
     </section>
 
-    {report && <section className="iteration panel"><div className="panel-title"><span>Agent Iteration Report</span><button className="mini" onClick={() => downloadReport(report, song.name)}>JSON Report</button></div><div className="iteration-row"><strong>{report.verified ? 'VERIFIED' : 'REVIEW'}</strong><span>Peak {report.before.peakDb.toFixed(1)} → {report.after.peakDb.toFixed(1)} dB</span><span>Clipped {report.before.clipped} → {report.after.clipped}</span><span>Gain × {report.fix.gainScale.toFixed(3)}</span></div></section>}
+    {report && <section className="iteration panel"><div className="panel-title"><span>{t('music.iterationReport')}</span><button className="mini" onClick={() => downloadReport(report, song.name)}>{t('common.jsonReport')}</button></div><div className="iteration-row"><strong>{report.verified ? 'VERIFIED' : 'REVIEW'}</strong><span>{t('metric.peak')} {report.before.peakDb.toFixed(1)} → {report.after.peakDb.toFixed(1)} dB</span><span>{t('metric.clipped')} {report.before.clipped} → {report.after.clipped}</span><span>{t('music.gain')} × {report.fix.gainScale.toFixed(3)}</span></div></section>}
 
     <section className="panel sequencer">
-      <div className="beat-head"><span>TRACK</span>{Array.from({ length: 16 }, (_, i) => <b key={i} className={cursor === i ? 'cursor' : ''}>{i + 1}</b>)}</div>
+      <div className="beat-head"><span>{t('music.track')}</span>{Array.from({ length: 16 }, (_, i) => <b key={i} className={cursor === i ? 'cursor' : ''}>{i + 1}</b>)}</div>
       {song.tracks.map((track, ti) => <div className="track" key={track.name}>
         <div className="track-name"><strong>{track.name}</strong><small>{track.wave}</small></div>
         {track.steps.map((step, si) => <button
@@ -228,22 +230,22 @@ export function App() {
       </div>)}
     </section>
 
-    {selectedNote && selected && selectedTrack && <section className="mobile-note-editor" aria-label="Pitch editor">
-      <div className="mobile-note-editor__meta"><strong>{selectedTrack.name} · Step {selectedNote.step + 1}</strong><small>Long-press any melodic step to edit pitch</small></div>
+    {selectedNote && selected && selectedTrack && <section className="mobile-note-editor" aria-label={t('music.pitchEditor')}>
+      <div className="mobile-note-editor__meta"><strong>{selectedTrack.name} · Step {selectedNote.step + 1}</strong><small>{t('music.pitchHint')}</small></div>
       <div className="mobile-note-editor__controls">
-        <button aria-label="Pitch down" onClick={() => note(selectedNote.track, selectedNote.step, -1)}>−</button>
+        <button aria-label={t('music.pitchDown')} onClick={() => note(selectedNote.track, selectedNote.step, -1)}>−</button>
         <strong>{selected.note}</strong>
-        <button aria-label="Pitch up" onClick={() => note(selectedNote.track, selectedNote.step, 1)}>+</button>
-        <button className="mobile-note-editor__done" onClick={() => setSelectedNote(null)}>Done</button>
+        <button aria-label={t('music.pitchUp')} onClick={() => note(selectedNote.track, selectedNote.step, 1)}>+</button>
+        <button className="mobile-note-editor__done" onClick={() => setSelectedNote(null)}>{t('music.done')}</button>
       </div>
     </section>}
 
-    <section className="panel sequencer drums"><div className="panel-title"><span>Drum Engine</span><small>sample-free synthesis</small></div>{song.drums.map((track, ti) => <div className="track" key={track.name}><div className="track-name"><strong>{track.name}</strong><small>{track.kind}</small></div>{track.steps.map((on, si) => <button key={si} className={'step drum ' + (on ? 'on ' : '') + (cursor === si ? 'cursor' : '')} onClick={() => drumToggle(ti, si)}>{on ? '●' : ''}</button>)}</div>)}</section>
+    <section className="panel sequencer drums"><div className="panel-title"><span>{t('music.drumEngine')}</span><small>{t('music.sampleFree')}</small></div>{song.drums.map((track, ti) => <div className="track" key={track.name}><div className="track-name"><strong>{track.name}</strong><small>{track.kind}</small></div>{track.steps.map((on, si) => <button key={si} className={'step drum ' + (on ? 'on ' : '') + (cursor === si ? 'cursor' : '')} onClick={() => drumToggle(ti, si)}>{on ? '●' : ''}</button>)}</div>)}</section>
 
-    <section className="music-dsl panel"><div className="panel-title"><span>Music DSL v1</span><button onClick={() => navigator.clipboard.writeText(JSON.stringify(song, null, 2))}><Copy size={14} />Copy JSON</button></div><pre>{JSON.stringify(song, null, 2)}</pre></section>
+    <section className="music-dsl panel"><div className="panel-title"><span>{t('music.dsl')}</span><button onClick={() => navigator.clipboard.writeText(JSON.stringify(song, null, 2))}><Copy size={14} />{t('common.copyJson')}</button></div><pre>{JSON.stringify(song, null, 2)}</pre></section>
 
-    <section className="music-controls">{song.tracks.map((track, ti) => <div className="panel" key={track.name}><div className="panel-title"><span>{track.name}</span><small>MIDI notes</small></div><label className="control"><span>Gain<strong>{track.gain}</strong></span><input type="range" min=".01" max=".25" step=".005" value={track.gain} onChange={e => setSong(current => ({ ...current, tracks: current.tracks.map((x, i) => i === ti ? { ...x, gain: +e.target.value } : x) }))} /></label><div className="wave-selector">{ws.map(w => <button key={w} className={track.wave === w ? 'active' : ''} onClick={() => setSong(current => ({ ...current, tracks: current.tracks.map((x, i) => i === ti ? { ...x, wave: w } : x) }))}>{w}</button>)}</div></div>)}</section>
+    <section className="music-controls">{song.tracks.map((track, ti) => <div className="panel" key={track.name}><div className="panel-title"><span>{track.name}</span><small>{t('music.midiNotes')}</small></div><label className="control"><span>{t('music.gain')}<strong>{track.gain}</strong></span><input type="range" min=".01" max=".25" step=".005" value={track.gain} onChange={e => setSong(current => ({ ...current, tracks: current.tracks.map((x, i) => i === ti ? { ...x, gain: +e.target.value } : x) }))} /></label><div className="wave-selector">{ws.map(w => <button key={w} className={track.wave === w ? 'active' : ''} onClick={() => setSong(current => ({ ...current, tracks: current.tracks.map((x, i) => i === ti ? { ...x, wave: w } : x) }))}>{w}</button>)}</div></div>)}</section>
 
-    <footer><span>RESONA v2.8 · BGM Composer</span><span>Generation-safe render · touch pitch editing · Music DSL · WAV</span></footer>
+    <footer><span>RESONA v2.8 · {t('music.composer')}</span><span>{t('footer.music')}</span></footer>
   </main>;
 }
