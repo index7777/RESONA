@@ -1,5 +1,5 @@
 // Validation + clamping for RESONA IR v3. Errors carry JSON paths.
-import type{Envelope,Mode,Num,Processor,SoundProgram,Source,Voice}from'./ir.ts';
+import type{Envelope,Mode,Num,Processor,SoundProgram,Source,Voice}from'./ir';
 const fin=(v:unknown):v is number=>typeof v==='number'&&Number.isFinite(v),clamp=(v:number,lo:number,hi:number)=>Math.max(lo,Math.min(hi,v)),LIMITS={maxDepth:6,maxVoices:256,maxDuration:30};
 function num(v:unknown,path:string,d:number|undefined,lo:number,hi:number):Num{if(v===undefined||v===null){if(d===undefined)throw Error(path+' is required');return d}if(fin(v))return clamp(v,lo,hi);const o=v as any;if(o&&Array.isArray(o.range)&&o.range.length===2&&fin(o.range[0])&&fin(o.range[1]))return{range:[clamp(Math.min(...o.range),lo,hi),clamp(Math.max(...o.range),lo,hi)]};if(o&&Array.isArray(o.choice)&&o.choice.length&&o.choice.every(fin))return{choice:o.choice.map((x:number)=>clamp(x,lo,hi))};throw Error(path+' must be a number, {range:[a,b]} or {choice:[...]}')}
 const pair=(v:unknown,path:string,lo:number,hi:number):[number,number]=>{if(!Array.isArray(v)||v.length!==2||!fin(v[0])||!fin(v[1]))throw Error(path+' must be [min,max]');return[clamp(Math.min(v[0],v[1]),lo,hi),clamp(Math.max(v[0],v[1]),lo,hi)]};
