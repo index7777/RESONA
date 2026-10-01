@@ -6,6 +6,7 @@ import { I18nProvider } from './i18n';
 import './styles.css';
 import './brand.css';
 import './mobile.css';
+import './localization.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
