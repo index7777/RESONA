@@ -5,7 +5,7 @@ import { useI18n } from '../../i18n';
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
 const HERO_DESKTOP = asset('brand/resona-hero-desktop-hq.webp');
 const HERO_MOBILE = HERO_DESKTOP;
-const CHARACTER_MASTER = asset('brand/character/resona-character-master.webp');
+const CHARACTER_MASTER = asset('brand/resona-hero-desktop.png');
 const HERO_FALLBACK = asset('brand/resona-hero-fallback.svg');
 const INTRO_KEY = 'resona:intro-seen';
 
