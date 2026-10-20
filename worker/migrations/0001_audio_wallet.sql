@@ -30,3 +30,21 @@ CREATE TABLE IF NOT EXISTS audio_credit_ledger (
 );
 CREATE INDEX IF NOT EXISTS audio_ledger_owner_created ON audio_credit_ledger(user_id, created_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS audio_ledger_job_event ON audio_credit_ledger(job_id, event_type) WHERE job_id IS NOT NULL;
+
+-- Atomic reservation: one job INSERT triggers debit and ledger write in the
+-- same SQLite statement/transaction. Insufficient funds abort the INSERT.
+CREATE TRIGGER IF NOT EXISTS audio_job_reserve_guard
+BEFORE INSERT ON audio_generation_jobs
+BEGIN
+  SELECT CASE WHEN NOT EXISTS (
+    SELECT 1 FROM audio_wallets WHERE user_id = NEW.user_id AND balance >= NEW.credits_reserved
+  ) THEN RAISE(ABORT, 'AUDIO_CREDITS_INSUFFICIENT') END;
+END;
+CREATE TRIGGER IF NOT EXISTS audio_job_reserve_apply
+AFTER INSERT ON audio_generation_jobs
+BEGIN
+  UPDATE audio_wallets SET balance = balance - NEW.credits_reserved,
+    updated_at = unixepoch() WHERE user_id = NEW.user_id;
+  INSERT INTO audio_credit_ledger(user_id, job_id, delta, event_type, event_key)
+  VALUES (NEW.user_id, NEW.id, -NEW.credits_reserved, 'reserve', 'reserve:' || NEW.id);
+END;
