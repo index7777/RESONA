@@ -41,27 +41,21 @@ export async function reserveJob(db, verifiedIdentity, { jobId, idempotencyKey, 
     if (existing.kind !== kind || existing.credits_reserved !== cost) throw new CreditError('IDEMPOTENCY_CONFLICT', 'Idempotency key reused with different parameters', 409);
     return { jobId: existing.id, status: existing.status, reused: true };
   }
-  // The first statement must not silently fail: use a conditional INSERT
-  // of a job based on the wallet's balance, followed by a guarded UPDATE.
-  // A failed/duplicate job insert aborts the batch and rolls back the debit.
-  const results = await db.batch([
-    db.prepare(`INSERT INTO audio_generation_jobs (id, user_id, idempotency_key, kind, status, credits_reserved)
-      SELECT ?, ?, ?, ?, 'reserved', ? WHERE EXISTS
-      (SELECT 1 FROM audio_wallets WHERE user_id = ? AND balance >= ?)`)
-      .bind(jobId, userId, idempotencyKey, kind, cost, userId, cost),
-    db.prepare(`UPDATE audio_wallets SET balance = balance - ?, updated_at = unixepoch()
-      WHERE user_id = ? AND balance >= ? AND EXISTS
-      (SELECT 1 FROM audio_generation_jobs WHERE id = ? AND user_id = ?)`)
-      .bind(cost, userId, cost, jobId, userId),
-    db.prepare(`INSERT INTO audio_credit_ledger (user_id, job_id, delta, event_type, event_key)
-      SELECT ?, ?, ?, 'reserve', ? WHERE EXISTS
-      (SELECT 1 FROM audio_generation_jobs WHERE id = ? AND user_id = ?)`)
-      .bind(userId, jobId, -cost, 'reserve:' + jobId, jobId, userId),
-  ]);
-  if (results[0].meta?.changes !== 1 || results[1].meta?.changes !== 1 || results[2].meta?.changes !== 1) {
-    // D1 batch has already committed if no SQL error. This case must be
-    // treated as an invariant violation, not success; see Phase 2 TODO.
-    throw new CreditError('RESERVATION_NOT_COMMITTED', 'Reservation not committed', 409);
+  // One INSERT atomically debits the wallet and writes the ledger via
+  // BEFORE/AFTER INSERT triggers in migration 0001.
+  try {
+    await db.prepare('INSERT INTO audio_generation_jobs (id, user_id, idempotency_key, kind, status, credits_reserved) VALUES (?, ?, ?, ?, ?, ?)')
+      .bind(jobId, userId, idempotencyKey, kind, 'reserved', cost).run();
+    return { jobId, status: 'reserved', reused: false };
+  } catch (error) {
+    const raced = await db.prepare('SELECT id, kind, credits_reserved, status FROM audio_generation_jobs WHERE user_id = ? AND idempotency_key = ?')
+      .bind(userId, idempotencyKey).first();
+    if (raced) {
+      if (raced.kind !== kind || raced.credits_reserved !== cost) throw new CreditError('IDEMPOTENCY_CONFLICT', 'Idempotency key reused with different parameters', 409);
+      return { jobId: raced.id, status: raced.status, reused: true };
+    }
+    if (String(error?.message || error).includes('AUDIO_CREDITS_INSUFFICIENT'))
+      throw new CreditError('CREDITS_INSUFFICIENT', 'Insufficient Audio Credits', 402);
+    throw error;
   }
-  return { jobId, status: 'reserved', reused: false };
 }
