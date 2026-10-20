@@ -197,3 +197,12 @@ Do not adopt these paths blindly: inspect current source tree and module convent
 ## 12. Next action
 
 Begin Phase 0 with **read-only source inspection**. Produce exact integration points and tests before modifying runtime code. This document is a handoff plan, not evidence that implementation is complete.
+
+## Implementation checkpoint — 2026-10-20
+
+- Added `worker/migrations/0001_audio_wallet.sql`: separate wallet/job/ledger tables and atomic reservation triggers. No production migration run.
+- Added `worker/src/identity.mjs` and `worker/src/wallet.mjs`: verified identity boundary and reservation prototype; no settlement/refund implementation.
+- Added `worker/src/api.mjs` and `worker/src/index.mjs`: read-only health, identity and wallet endpoints. **Production entrypoint deliberately fails closed** until the RES trusted verifier exists.
+- Added `tests/audio-wallet.test.mjs` and `tests/audio-api.test.mjs`: source-level unit tests; **not executed**.
+- Next blocking task: review RES AGENTS.md required handoff docs, then implement a private RES service-binding verifier on a reviewed RES feature branch; wire RESONA authenticate adapter; test D1 trigger atomicity and logout/ban propagation. Do not expose the verifier on public routes or deploy until tests and review.
+- RES `main`, RES image credits, RESONA `main`, production Cloudflare configuration and live databases remain untouched.
