@@ -21,5 +21,6 @@ export async function authenticateRes(request, env) {
   const body = await response.json().catch(() => null);
   // The service endpoint must independently verify both the capability and
   // the RES session; a client-controlled marker alone is not authorization.
-  return requireVerifiedIdentity(body);
+  const verified = requireVerifiedIdentity(body);
+  return { verifiedBy: 'res-service-binding', userId: verified.userId };
 }

@@ -21,8 +21,14 @@ test('read-only endpoints reject writes', async () => {
   assert.equal(r.status, 405);
 });
 
-test('me returns verified identity only', async () => {
+test('me rejects an unverified adapter result', async () => {
   const r = await handleAudioApi(url('/audio/api/me'), {}, async () => ({ userId: 'u_abcdefgh1234' }));
+  assert.equal(r.status, 401);
+  assert.deepEqual(await r.json(), { code: 'LOGIN_REQUIRED' });
+});
+
+test('me returns verified identity only', async () => {
+  const r = await handleAudioApi(url('/audio/api/me'), {}, async () => ({ verifiedBy: 'res-service-binding', userId: 'u_abcdefgh1234' }));
   assert.equal(r.status, 200);
   assert.deepEqual(await r.json(), { userId: 'u_abcdefgh1234' });
 });

@@ -7,18 +7,21 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "render": "node --no-warnings --experimental-strip-types scripts/render.ts"
+    "render": "node --no-warnings --experimental-strip-types scripts/render.ts",
+    "deploy:audio-preview": "wrangler deploy --env preview",
+    "test:audio": "node --test tests/audio-wallet.test.mjs tests/audio-api.test.mjs tests/res-auth.test.mjs tests/audio-generation.test.mjs tests/stability-audio.test.mjs tests/gemini-lyria.test.mjs tests/cloudflare-sfx.test.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "typescript": "latest",
+    "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "lucide-react": "latest"
+    "typescript": "latest",
+    "vite": "latest"
   },
   "devDependencies": {
     "@types/react": "latest",
-    "@types/react-dom": "latest"
+    "@types/react-dom": "latest",
+    "wrangler": "^4.151.2"
   }
 }

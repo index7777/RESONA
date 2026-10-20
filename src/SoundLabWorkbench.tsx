@@ -1,5 +1,5 @@
 import { useI18n } from "./i18n";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
   Play,
@@ -33,6 +33,7 @@ import { libraryOrder, soundLibrary } from "./soundLibrary";
 import { exportAsset } from "./exportContract";
 import { SoundLabAnalysis } from "./SoundLabAnalysis";
 import { SoundLabAdvanced } from "./SoundLabAdvanced";
+const AiAudioStudio = lazy(() => import("./AiAudioStudio").then(module => ({ default: module.AiAudioStudio })));
 const waves: Waveform[] = ["sine", "square", "sawtooth", "triangle", "noise"];
 const S = ({
   label,
@@ -81,6 +82,7 @@ export function App() {
     [optimization, setOptimization] = useState<OptimizeResult | null>(null),
     [optimizing, setOptimizing] = useState(false),
     [advanced, setAdvanced] = useState(false),
+    [aiStudioOpen, setAiStudioOpen] = useState(false),
     ctx = useRef<AudioContext | null>(null),
     canvas = useRef<HTMLCanvasElement | null>(null),
     specCanvas = useRef<HTMLCanvasElement | null>(null),
@@ -319,6 +321,10 @@ export function App() {
           </div>
         </div>
         <div className="actions">
+          <button aria-expanded={aiStudioOpen} aria-controls="ai-audio-panel" onClick={() => setAiStudioOpen(value => !value)}>
+            <Sparkles size={15} />
+            {t(aiStudioOpen ? "ai.close" : "ai.open")}
+          </button>
           <button onClick={vary}>
             <Shuffle size={15} />
             {t("sound.variation")}
@@ -341,6 +347,7 @@ export function App() {
           </button>
         </div>
       </header>
+      {aiStudioOpen && <div id="ai-audio-panel"><Suspense fallback={<section className="ai-audio-studio">{t("ai.loading")}</section>}><AiAudioStudio /></Suspense></div>}
       <section className="promptbar">
         <input
           value={prompt}

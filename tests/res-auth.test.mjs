@@ -21,7 +21,7 @@ test('missing configuration and cookie fail closed', async () => {
 test('forwards only RES session cookie', async () => {
   const result = await authenticateRes(req('other=private; res_session=abc; tracking=1'),
     env(Response.json(identity), init => assert.equal(init.headers.cookie, 'res_session=abc')));
-  assert.deepEqual(result, { userId: identity.userId });
+  assert.deepEqual(result, { verifiedBy: 'res-service-binding', userId: identity.userId });
 });
 test('rejects invalid bridge response and failed verification', async () => {
   await assert.rejects(authenticateRes(req('res_session=abc'), env(new Response(null, { status: 401 }))));

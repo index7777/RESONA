@@ -59,3 +59,64 @@ export async function reserveJob(db, verifiedIdentity, { jobId, idempotencyKey, 
     throw error;
   }
 }
+
+function validateJobId(jobId) {
+  if (!validId(jobId)) throw new CreditError('INVALID_JOB', 'Invalid generation job ID');
+  return jobId;
+}
+
+async function existingJob(db, userId, jobId) {
+  return db.prepare('SELECT id, status, credits_reserved FROM audio_generation_jobs WHERE user_id = ? AND id = ?')
+    .bind(userId, jobId).first();
+}
+
+/** Finalize an accepted provider result. A success keeps the original reserve. */
+export async function finalizeJob(db, verifiedIdentity, { jobId }) {
+  const { userId } = requireVerifiedIdentity(verifiedIdentity);
+  validateJobId(jobId);
+  const updated = await db.prepare(`UPDATE audio_generation_jobs
+    SET status = 'succeeded', updated_at = unixepoch()
+    WHERE user_id = ? AND id = ? AND status IN ('reserved','queued','running','unknown')
+    RETURNING id, status, credits_reserved`).bind(userId, jobId).first();
+  if (updated) return { jobId: updated.id, status: updated.status, credits: updated.credits_reserved, reused: false };
+  const current = await existingJob(db, userId, jobId);
+  if (!current) throw new CreditError('JOB_NOT_FOUND', 'Generation job not found', 404);
+  if (current.status === 'succeeded') return { jobId: current.id, status: current.status, credits: current.credits_reserved, reused: true };
+  throw new CreditError('JOB_TERMINAL', 'Generation job cannot be finalized from its current state', 409);
+}
+
+/**
+ * Refund only a definitive failure/cancellation. `unknown` provider outcomes
+ * remain reserved until reconciled; the database trigger performs the refund
+ * and ledger append atomically and exactly once.
+ */
+export async function refundJob(db, verifiedIdentity, { jobId, failureCode = 'provider_failed' }) {
+  const { userId } = requireVerifiedIdentity(verifiedIdentity);
+  validateJobId(jobId);
+  if (typeof failureCode !== 'string' || !/^[a-z0-9_-]{1,64}$/.test(failureCode))
+    throw new CreditError('INVALID_FAILURE_CODE', 'Invalid failure code');
+  const updated = await db.prepare(`UPDATE audio_generation_jobs
+    SET status = 'failed', failure_code = ?, updated_at = unixepoch()
+    WHERE user_id = ? AND id = ? AND status IN ('reserved','queued','running','unknown')
+    RETURNING id, status, credits_reserved`).bind(failureCode, userId, jobId).first();
+  if (updated) return { jobId: updated.id, status: updated.status, refunded: updated.credits_reserved, reused: false };
+  const current = await existingJob(db, userId, jobId);
+  if (!current) throw new CreditError('JOB_NOT_FOUND', 'Generation job not found', 404);
+  if (current.status === 'failed') return { jobId: current.id, status: current.status, refunded: current.credits_reserved, reused: true };
+  throw new CreditError('JOB_TERMINAL', 'Generation job cannot be refunded from its current state', 409);
+}
+
+/** Mark an ambiguous provider outcome without refunding or retrying it. */
+export async function markJobUnknown(db, verifiedIdentity, { jobId }) {
+  const { userId } = requireVerifiedIdentity(verifiedIdentity);
+  validateJobId(jobId);
+  const updated = await db.prepare(`UPDATE audio_generation_jobs
+    SET status = 'unknown', updated_at = unixepoch()
+    WHERE user_id = ? AND id = ? AND status IN ('reserved','queued','running')
+    RETURNING id, status`).bind(userId, jobId).first();
+  if (updated) return { jobId: updated.id, status: updated.status, reused: false };
+  const current = await existingJob(db, userId, jobId);
+  if (!current) throw new CreditError('JOB_NOT_FOUND', 'Generation job not found', 404);
+  if (current.status === 'unknown') return { jobId: current.id, status: current.status, reused: true };
+  throw new CreditError('JOB_TERMINAL', 'Generation job cannot become unknown from its current state', 409);
+}

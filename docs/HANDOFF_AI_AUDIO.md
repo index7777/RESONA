@@ -1,6 +1,6 @@
 # RESONA — AI BGM / SFX Integration Handoff
 
-> Status: PLANNING ONLY. Created 2026-10-20 on `feature/ai-audio-studio`. No application, RES, database, production route, or billing implementation is claimed complete.
+> Status: IMPLEMENTATION IN PROGRESS on `feature/ai-audio-studio`. RESONA has a local-only RES identity adapter, an API-level verified-identity gate, separately tested Audio D1 reservation/settlement/refund primitives, and an isolated preview D1. The preview Worker has not deployed; no real provider, public route, paid generation, or production billing is active.
 > Authoritative implementation branch: `index7777/RESONA:feature/ai-audio-studio`. Do not commit this work to `main` without explicit approval.
 > RES integration reference: `index7777/RES:refactor/retouch-gemini` (not RES `main`).
 
@@ -56,10 +56,9 @@ RESONA Worker API
        |    |-- audio_credit_ledger (append-only)
        |    |-- audio_credit_reservations
        |    |-- audio_generation_jobs
-       |    |-- audio_assets
        |    |-- audio_pricing_rules
        |    +-- optional orders / payment events later
-       |-- R2 (private generated assets + metadata)
+       |-- Browser session memory (generated audio preview/download; never persisted by RESONA)
        |-- Queue/worker (asynchronous provider calls, retries)
        |-- Gemini (intent parsing / prompt or structured IR generation)
        +-- approved SFX/BGM providers (audio generation)
@@ -73,7 +72,7 @@ Deployment note: Verify Cloudflare custom-domain ownership, route specificity an
 2. RESONA owns a separate Audio D1 and append-only audio ledger; each wallet is keyed by the authenticated RES user ID, never by a caller-supplied ID.
 3. Pricing is calculated and enforced server-side from versioned rules (provider, model, requested seconds, quality, output count). UI quotes are informative and expire.
 4. On generation: validate identity/entitlement/rate limit, check wallet and reserve credits **atomically**, then enqueue exactly one idempotent job. Insufficient funds must not call the paid provider.
-5. On success: finalize reservation once and persist the asset; on definitive failure/cancellation: release or refund once. Handle provider timeouts/unknown outcomes via reconciliation rather than blindly retrying and double-charging.
+5. On success: finalize reservation once and return audio to the browser for in-session preview/download only; never persist generated audio. The prompt is sent to the selected generation provider. On definitive failure/cancellation: release or refund once. Handle provider timeouts/unknown outcomes via reconciliation rather than blindly retrying and double-charging.
 6. Use unique idempotency keys, unique provider event IDs and database constraints; verify concurrency, retry and webhook replay behavior with tests.
 7. Never trust browser-supplied balances, costs, completion flags, admin roles or payment success.
 8. Audio trial grants and point packages require explicit business approval; do not reuse RES 45-credit onboarding or invent monetary value.
@@ -90,7 +89,7 @@ Deployment note: Verify Cloudflare custom-domain ownership, route specificity an
 ### Paid AI SFX
 - Prompt or game-audio specification -> Gemini structured intent -> choose between existing RESONA IR renderer and licensed external audio model.
 - Where possible, produce editable IR and variations; for external audio return honest provenance and avoid falsely claiming deterministic IR reproduction.
-- Generate preview and metadata, validate measurable properties (duration, peak, clipping, loop boundaries), store asset in private R2, expose authorized download.
+- Generate audio and return it to browser memory for preview and local download; do not store audio or expose a server-side asset library/download route.
 - Support coherent asset families and controlled variations over time.
 
 ### Paid AI BGM
@@ -109,8 +108,7 @@ Deployment note: Verify Cloudflare custom-domain ownership, route specificity an
 - `POST /audio/api/quote` -> server-calculated signed/expiring quote.
 - `POST /audio/api/generations` -> idempotent reservation and job creation.
 - `GET /audio/api/generations/:id` -> owner-scoped job state.
-- `GET /audio/api/assets` -> owner-scoped library.
-- `GET /audio/api/assets/:id/download` -> short-lived authorized R2 URL.
+- `POST /audio/api/generations` -> generated audio payload delivered to the authenticated browser session; no persistent audio asset endpoint.
 - `GET /audio/api/ledger` -> paginated credit history.
 - Future `POST /audio/api/orders` and signed payment webhook only after payment choice.
 
@@ -162,7 +160,7 @@ Do not adopt these paths blindly: inspect current source tree and module convent
 - **Gate:** tests prove RES image balance unchanged, cross-user isolation, concurrency safety, idempotency and no paid provider call on insufficient funds.
 
 ### Phase 3 — Paid SFX pipeline
-- Queue + provider adapter + R2 + owner-scoped assets/download.
+- Provider adapter + browser-session preview/download; no server-side audio persistence.
 - Include cancellation/failure reconciliation, limits, measurable audio validation.
 - **Gate:** provider sandbox E2E, exactly-once credit settlement and refund tests.
 
@@ -172,7 +170,7 @@ Do not adopt these paths blindly: inspect current source tree and module convent
 
 ### Phase 5 — Production readiness
 - Add RES navigation entry and deploy RESONA to tested `reslab.app/audio` route.
-- Configure secrets per environment, D1 migrations, R2, queues, observability, rate limits, privacy/terms.
+- Configure secrets per environment, D1 migrations, queues if needed, observability, rate limits, privacy/terms. Do not add persistent generated-audio storage.
 - Add branch-scoped CI checks and preview deployments; require review before production.
 - **Gate:** smoke-test OAuth handoff, wallet isolation, paid generation, downloads, refund path, rollback.
 
@@ -181,7 +179,7 @@ Do not adopt these paths blindly: inspect current source tree and module convent
 - Run `npm run build` and `npm run render` representative fixtures on RESONA branch; add tests before relying on automation.
 - Test sound-program compatibility (v2/v3), deterministic output where applicable, WAV integrity, and asset metadata.
 - Test security and financial failure modes: unauthenticated calls, token audience mismatch, CSRF/session abuse, wrong-user asset access, parallel requests, retries, webhook replay, refunds.
-- Preview deployment should use nonproduction D1/R2, provider sandbox and nonproduction credit grants.
+- Preview deployment should use nonproduction D1, provider sandbox and nonproduction credit grants; generated audio remains browser-session-only.
 - Do not merge into `main`, deploy to `reslab.app`, migrate production D1 or change RES auth without explicit authorization.
 - Preserve RES `refactor/retouch-gemini` image editing invariants and verification requirements.
 
@@ -189,7 +187,7 @@ Do not adopt these paths blindly: inspect current source tree and module convent
 
 1. Confirm current RESONA brand assets and desired visual direction (retain vs redesign).
 2. Confirm how RESONA users are entitled during RES's 10-user trial limit.
-3. Choose SFX and BGM providers based on actual API availability, licenses and cost.
+3. Gemini Lyria 3.5 is the recommended primary BGM provider; see [Gemini provider and pricing analysis](GEMINI_AUDIO_PROVIDER_PRICING.md). SFX still requires a provider that can meet natural-sound quality and honest duration reporting.
 4. Approve Audio Credits pricing, signup grant, expiry/refund policy, usage caps and payment provider.
 5. Choose identity bridge and domain route after validating Cloudflare behavior.
 6. Decide whether remote Gemini-assisted IR generation is paid, free within quota, or disabled for MVP.
@@ -198,11 +196,47 @@ Do not adopt these paths blindly: inspect current source tree and module convent
 
 Begin Phase 0 with **read-only source inspection**. Produce exact integration points and tests before modifying runtime code. This document is a handoff plan, not evidence that implementation is complete.
 
-## Implementation checkpoint — 2026-10-20
+## Initial implementation checkpoint — 2026-10-20
 
 - Added `worker/migrations/0001_audio_wallet.sql`: separate wallet/job/ledger tables and atomic reservation triggers. No production migration run.
 - Added `worker/src/identity.mjs` and `worker/src/wallet.mjs`: verified identity boundary and reservation prototype; no settlement/refund implementation.
 - Added `worker/src/api.mjs` and `worker/src/index.mjs`: read-only health, identity and wallet endpoints. **Production entrypoint deliberately fails closed** until the RES trusted verifier exists.
 - Added `tests/audio-wallet.test.mjs` and `tests/audio-api.test.mjs`: source-level unit tests; **not executed**.
-- Next blocking task: review RES AGENTS.md required handoff docs, then implement a private RES service-binding verifier on a reviewed RES feature branch; wire RESONA authenticate adapter; test D1 trigger atomicity and logout/ban propagation. Do not expose the verifier on public routes or deploy until tests and review.
+- At this initial checkpoint, the next blocking task was to review RES AGENTS.md and implement a private RES service-binding verifier. The follow-up checkpoint below supersedes that task status.
 - RES `main`, RES image credits, RESONA `main`, production Cloudflare configuration and live databases remain untouched.
+
+## Implementation checkpoint — 2026-10-20 (follow-up)
+
+- RES `feature/resona-auth-bridge` now has local-only fixed-time bearer comparison and isolated identity Worker tests. The code is not deployed; preview Google login and Cloudflare bindings remain unverified.
+- RESONA's `/audio/api/*` boundary re-validates adapter output with `requireVerifiedIdentity`, including a regression test for a forged adapter `userId`.
+- `worker/migrations/0002_audio_settlement.sql` adds a guarded job-state transition and atomically refunds credits plus appends a ledger record on definitive failure. Unknown provider results stay reserved until reconciliation.
+- Audio wallet tests run the real SQL migrations in a separate in-memory SQLite database and cover reservation, retries, conflicts, parallel overspend, success settlement, refund-once, unknown outcomes, and ledger-trigger rollback. This is not a remote Cloudflare D1 test.
+- Wrangler 4.151.2 is a development dependency and current Wrangler authorization successfully reached the Cloudflare account. A separate `resona-audio-preview` D1 exists; no credential was written to the repository. No Worker deployment or public route is active.
+- Wrangler OAuth was subsequently authorized for the configured Cloudflare account. The account's pre-existing `res` database was inspected but left untouched.
+- Created a separate Cloudflare D1 database, `resona-audio-preview` (`19ece3dd-79b5-42e0-8192-fc146ec732bb`), and added `wrangler.toml` bindings under `env.preview`. Applied and remotely verified both Audio-only migrations; tables are `audio_wallets`, `audio_generation_jobs`, and `audio_credit_ledger` plus D1 internals. No production data was migrated.
+- The preview Worker itself is not deployed. `env.preview` is deliberately configured without a public Workers.dev endpoint or domain route and references the isolated service binding `res-auth-bridge-preview`; that RES bridge preview Worker does not yet exist in this Cloudflare account. This prevents accidentally binding to production RES.
+- Added a versioned quote flow and generation API: `/audio/api/quote`, `/audio/api/generations`, and `/audio/api/generations/:id`. Audio is returned for the active browser session only; there is no persistent asset library or download route. Quotes are user-bound, expire in five minutes, and can be consumed only once; pricing is server-side, duration-aware, and refuses to run until explicit per-10-second Audio Credit prices are configured.
+- Added a Stable Audio 3 adapter for both SFX and BGM with natural/physical SFX prompting, provider polling, one or two separately labeled variations delivered to the current browser session, idempotent reservation, settlement, and definitive-failure refund. Generated audio is not persisted. Ambiguous provider outcomes remain reserved for reconciliation; generation remains disabled by default.
+- Added a lazily loaded, zh-TW/English localized AI Audio Studio panel to the existing Sound Lab. It supports SFX/BGM, requested duration, V1/V2, credit display/quote, generation, playback and download; it preserves the existing local DSP workflow and warns that BGM loop points are not guaranteed.
+- Added `0003_audio_generation_assets.sql` remotely to the isolated D1. Confirmed `audio_assets` held zero rows, then applied `0004_remove_audio_asset_storage.sql` remotely; the preview database now retains no asset index. Removed the R2 binding. `AUDIO_GENERATION_ENABLED=false`.
+- Official provider research indicates Stable Audio 3 is a candidate, not an approved production choice: the [API schema](https://platform.stability.ai/docs/api-reference) specifies 1–380 seconds and an 8-credit generation, while the [pricing page](https://platform.stability.ai/pricing) currently lists 26 credits for Stable Audio 3.0. Treat provider cost as unresolved until Stability confirms the applicable API rate. The [Terms of Service](https://platform.stability.ai/legal/terms-of-service) assign output rights between Stability and its API customer subject to applicable law and terms; this does not automatically assign rights from RESONA to each end user, nor guarantee copyrightability or non-infringement. RESONA's end-user terms must explicitly reflect the requested user-rights policy before enabling paid generation. Prompts are transmitted to Stability for processing. The account's registration/eligibility and end-user terms require review. The provider API key is not configured in this environment.
+- User direction on 2026-10-20: make Gemini the primary approach, then analyze pricing. The official Gemini research and direct-cost analysis are documented in [GEMINI_AUDIO_PROVIDER_PRICING.md](GEMINI_AUDIO_PROVIDER_PRICING.md). Lyria 3.5 is recommended for BGM at USD 0.08 per request (no free tier); Lyria 3 Clip Preview is USD 0.04 per request but always generates 30 seconds. These are provider costs, not approved Audio Credit tariffs. Lyria models are music generators and do not promise exact-duration SFX; the existing per-10-second quote formula must be replaced with a versioned per-model/per-request rate card before Gemini is enabled. Use paid quota for production; Google states unpaid prompts and responses can be used to improve products, while paid usage can retain prompts/output for abuse monitoring. RESONA still does not persist generated audio, but prompts/results are processed by Google and the Worker.
+- ElevenLabs was checked as the dedicated SFX candidate. Its endpoint supports 0.5–30-second sound effects, but public billing references differ and public Sound Effects terms restrict distribution as isolated audio files. That may conflict with RESONA's promised standalone preview/download, so it is not approved for integration without written confirmation of rights and API pricing.
+- Free SFX provider check: Freesound is an existing-sound library, not generative AI. Its free API is limited to non-commercial use; commercial API access must be negotiated with UPF. Its sounds remain governed by item-specific CC licenses, so it cannot promise that each generated/downloaded sound is owned by the RESONA user. No free hosted generative SFX API is currently approved. See [Gemini provider and pricing analysis](GEMINI_AUDIO_PROVIDER_PRICING.md).
+- Implemented Gemini Lyria 3.5 for BGM; SFX remains behind a separate explicit feature flag pending provider approval. BGM quotes use USD 0.08 per requested variant multiplied by `AUDIO_BGM_COST_MULTIPLIER` (preview config 2.0, 50% model-cost-only gross margin) and then convert to Audio Credits using `AUDIO_CREDIT_VALUE_USD`. The latter is unset, so quotes fail closed; generation remains disabled. Gemini output duration is reported from browser metadata rather than echoing the requested target. `tests/gemini-lyria.test.mjs` and the API integration test cover the provider request, price calculation, per-variant calls, and no persistent audio storage.
+- No R2 bucket is required or configured. The RES identity bridge preview Worker does not yet exist in this account. No Worker or public route has been deployed.
+- Worker packaging has passed Wrangler's preview dry-run. A preview deployment was attempted and Cloudflare rejected it because the bound service `res-auth-bridge-preview` does not exist yet; no Worker deployment or route was created. Paid generation remains off.
+- Remaining live acceptance gates for stage 8: deploy the RES identity bridge against a test-only identity database and validate Google OAuth/suspension; add the provider secret; confirm license/attribution eligibility and the provider's actual API pricing; document the user-rights transfer in RESONA terms; approve the Audio Credit rate and a way for test users to receive preview credits. Until then, paid generation stays disabled and no production route is configured.
+- Verification after these additions: 16 Node tests pass, `npm run build` passes, and `git diff --check` passes. Wrangler emits a non-fatal local log-file permission warning under the user's AppData roaming directory; authenticated D1 API calls still succeeded.
+
+## BGM-first and self-hosted SFX research checkpoint — 2026-10-20
+
+- User direction: analyze self-hosted open SFX models and complete BGM first.
+- BGM UI now opens on BGM by default. Gemini Lyria prompt assembly now adds timestamp-guided intro/development/ending sections derived from the selected duration and asks for a restart-friendly ending. These timestamps are creative guidance only; the API's actual audio duration remains measured in the browser, and seamless looping is not promised.
+- User clarified deployment target: SFX inference should run on Cloudflare, not be installed on the local Windows machine.
+- Added an isolated Cloudflare Durable Object Container proof-of-concept using the Stable Audio 3 Small-SFX CPU model. The preview Container is configured as `standard-4` (4 vCPU/12 GiB), model weights are fetched at runtime only with an HF token, generated WAV is serialized in memory, and an idle timeout lets the Container scale down. The main RESONA Worker is the only intended caller; `AUDIO_GENERATION_ENABLED` and `AUDIO_SFX_GENERATION_ENABLED` remain false.
+- The first implementation uses the vendor Python CPU API (not the separately optimized TFLite build) to keep the model loaded during a warm container. Measure cold start, generation latency, RAM, duration, and quality before choosing whether to switch to TFLite or production sizing.
+- No weights were downloaded, no HF token was added, and no Worker/Container was deployed. Deployment requires review of gated model access and licensing, a Workers Paid plan/Container availability, Docker image build, and measured spending. Generated user audio is not written to disk or R2.
+- Added mocked tests for the Cloudflare SFX adapter and audio validation. Full audio tests pass (25), frontend build passes, and Python syntax compilation passes. Wrangler preview dry-run could not complete in this workspace because the bundler was denied access to a parent directory (`../../..`) and Wrangler's log path under AppData was permission denied; no deployment was attempted.
+- Container setup/pricing/model details are recorded in `GEMINI_AUDIO_PROVIDER_PRICING.md`.
+- Updated candidate/rights/POC analysis is in `GEMINI_AUDIO_PROVIDER_PRICING.md`.
