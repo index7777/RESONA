@@ -1,6 +1,6 @@
 # RESONA — AI BGM / SFX Integration Handoff
 
-> Status: IMPLEMENTATION IN PROGRESS on `feature/ai-audio-studio`. RESONA has a local-only RES identity adapter, an API-level verified-identity gate, separately tested Audio D1 reservation/settlement/refund primitives, and an isolated preview D1. The preview Worker has not deployed; no real provider, public route, paid generation, or production billing is active.
+> Status: IMPLEMENTATION IN PROGRESS on `feature/ai-audio-studio`. See the latest dated Cloudflare checkpoint at the end of this file; older checkpoints below are historical. An isolated RES identity bridge is deployed without public URLs/routes. The RESONA Audio Worker build has not succeeded, no `/audio` route is active, and paid generation remains disabled.
 > Authoritative implementation branch: `index7777/RESONA:feature/ai-audio-studio`. Do not commit this work to `main` without explicit approval.
 > RES integration reference: `index7777/RES:refactor/retouch-gemini` (not RES `main`).
 
@@ -195,6 +195,33 @@ Do not adopt these paths blindly: inspect current source tree and module convent
 ## 12. Next action
 
 Begin Phase 0 with **read-only source inspection**. Produce exact integration points and tests before modifying runtime code. This document is a handoff plan, not evidence that implementation is complete.
+
+## Current Cloudflare handoff — 2026-10-21
+
+This checkpoint supersedes earlier dated statements below that said no identity bridge had been deployed. The detailed operator runbook is [CLOUDFLARE_REMOTE_SFX_DEPLOY.md](CLOUDFLARE_REMOTE_SFX_DEPLOY.md); manual product review steps are in [MANUAL_QA_HANDOFF.md](MANUAL_QA_HANDOFF.md).
+
+### Completed
+
+- RESONA is on `feature/ai-audio-studio`; branch tip before this handoff update was `b5aebcc` (`Prepare RESONA audio preview`). The Cloudflare build project targets this branch, not `main`.
+- Cloudflare has an isolated `resona-audio-preview` D1 (`19ece3dd-79b5-42e0-8192-fc146ec732bb`) with Audio-only schema, plus a separate `res-identity-preview` D1 (`e9cd4d92-27a9-40c4-ac9e-119b3d1ccfd2`). No production RES data was copied.
+- RES branch `feature/resona-auth-bridge` contains commits `d4dee19` (constant-time capability comparison and tests) and `e28703a` (isolated preview D1 Wrangler configuration). The private `res-auth-bridge-preview` Worker was deployed as version `7f5db535-c57d-4d05-89c1-a4d6b8b16737`; it has no Workers.dev hostname, Preview URL, custom domain, or route. Its bridge secret is configured as a Cloudflare secret and is not recorded here.
+- Cloudflare Workers Builds project `resona-audio-preview` points at `index7777/RESONA`, root `/`, build command `npm ci && npm run build`, deploy command `npm run deploy:audio-preview`, and production branch `feature/ai-audio-studio`. Builds do not require Docker on the developer machine.
+- Latest previously reported QA: RES bridge tests passed 4/4; RESONA audio tests passed 25/25, frontend build passed, and reference render generated all 24 programs. These are historical results from 2026-10-20/21, not a fresh run for this documentation commit.
+
+### Current blockers and uncompleted work
+
+1. Cloudflare currently reports its GitHub repository connection as disconnected. GitHub opened a sudo re-authentication page for the account owner. The owner must complete the six-digit verification in Chrome and any subsequent Cloudflare `index7777/RESONA` installation confirmation. No verification code belongs in chat or repository files.
+2. After reconnection, trigger a Cloudflare build for `feature/ai-audio-studio`; the only earlier build was initialized from `main`, where frontend build passed but deploy stopped because that branch did not contain `deploy:audio-preview`. It did not deploy the audio Worker.
+3. Confirm the remote Container image build completes. This is the first build that exercises the actual Workers Builds remote image flow; local Windows Docker is not required.
+4. Once the audio Worker exists, set its `RES_BRIDGE_KEY` Cloudflare secret to the same capability as the bridge's `RESONA_BRIDGE_KEY` using the encrypted local recovery copy. Never print or commit the value. Verify `AUDIO_DB` and `RES_AUTH` bindings resolve only to the two preview resources.
+5. Keep `workers.dev`, preview URLs, custom domains, and routes disabled while validating auth, bridge revocation/suspension behavior, D1 semantics, Container cold start, health checks, and cost. Configure HF model access only after gated access and license review; keep both generation flags false until provider, rights, pricing, and settlement/refund QA is approved.
+6. Production remains unfinished: no `/audio` route under `reslab.app` has been configured. The existing `res` Worker owns `reslab.app`; route ownership/dispatch and preservation of `/app`, asset paths, OAuth return, cookies, and `/audio/api/*` worker-first behavior require a tested RES-side change and isolated preview QA before any production route is considered.
+
+### Safety boundaries
+
+- Do not deploy to or edit the production `res` Worker, change `reslab.app` routes, merge to either repository's `main`, enable paid generation, or migrate production data as part of this handoff.
+- Do not use a local Docker daemon. Cloudflare Workers Builds is the intended remote Container image build path.
+- The exact current Cloudflare configuration, first failed build, account re-auth step, and operator sequence are maintained in [CLOUDFLARE_REMOTE_SFX_DEPLOY.md](CLOUDFLARE_REMOTE_SFX_DEPLOY.md).
 
 ## Initial implementation checkpoint — 2026-10-20
 
