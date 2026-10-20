@@ -114,3 +114,4 @@ footer { max-width: 1400px; margin: 16px auto 0; display: flex; justify-content:
 .presetbar.physical button.active{border-color:#67f3d4;color:#67f3d4}
 .voice-meta{margin:2px 0 6px;font-size:12px;opacity:.72;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-word}
 .control input[type=number]{background:#080c12;color:inherit;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 8px;font:inherit}
+.ai-audio-demo{margin:0 0 14px;padding:10px 12px;border:1px solid rgba(255,197,110,.32);border-radius:9px;background:rgba(255,197,110,.07);color:#ffd99b;font-size:11px;line-height:1.55}

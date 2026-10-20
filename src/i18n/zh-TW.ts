@@ -123,6 +123,8 @@ export const zhTW: Catalog = {
   'ai.eyebrow': '為你的場景構成自然聲響',
   'ai.title': 'AI 音訊工作室',
   'ai.credits': '音訊點數',
+  'ai.demoMode': '本機 QA 示範：合成 3.5 秒測試音訊，不會登入、呼叫生成服務或扣除實際點數。',
+  'ai.demoComplete': '本機示範完成：音訊為合成測試素材，不代表 AI 生成品質。',
   'ai.type': '音訊類型',
   'ai.sfx': '音效',
   'ai.bgm': '背景音樂',

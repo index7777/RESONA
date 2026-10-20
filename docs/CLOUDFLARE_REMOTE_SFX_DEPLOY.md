@@ -6,6 +6,7 @@
 
 - `AUDIO_GENERATION_ENABLED=false`、`AUDIO_SFX_GENERATION_ENABLED=false`：付費生成維持關閉。
 - Preview 沒有公開 `workers.dev` 網址或自訂路由。
+- Vite 將前端建置到 `dist/audio/`；Cloudflare static assets 從 `dist/` 提供 `/audio/*`，只有 `/audio/api/*` 會先進 Worker。
 - `RES_AUTH` 指向 `res-auth-bridge-preview`。該 Preview 服務尚未確認已部署；缺少它時不能完成 Audio Worker 部署。
 - Container 以執行時 `HF_TOKEN` 下載 gated model weights。Token 不得放進 Git、Wrangler vars、Docker build args 或映像。
 - 生成結果只在請求期間存在於記憶體，不寫入 R2 或音檔資料庫。
@@ -14,7 +15,7 @@
 
 1. 在 Cloudflare Dashboard 開啟 `resona-audio-preview` Worker 的 **Settings → Builds**，連接 `index7777/RESONA` GitHub repository。
 2. 將此隔離 Preview Worker 的 **Production branch** 設為 `feature/ai-audio-studio`。這很重要：Cloudflare 對一般非正式分支的預設流程可能只上傳 Worker 版本，不建置或發布 Container 映像。不要把這個分支接到正式 RESONA Worker。
-3. 將根目錄設為 repository root，建置／部署命令設為 `npm ci && npm run deploy:audio-preview`。
+3. 將根目錄設為 repository root，建置／部署命令設為 `npm ci && npm run build && npm run deploy:audio-preview`。
 4. 確認 Cloudflare Builds 使用的 Wrangler 版本與 repo lockfile 相符，並允許此 Worker 使用 Containers。
 5. 在 GitHub 分支觸發建置前，先確認 Preview `RES_AUTH` service binding 的目標存在且已測過；目前缺少該 Worker 時部署會被拒絕。不要為了讓部署通過而改綁正式 RES Worker。
 6. Hugging Face 登入並接受模型存取條款後，才在該 Preview Worker 的 **Settings → Variables and Secrets** 新增 `HF_TOKEN`，類型選 Secret。不要提交 token 或將它傳入映像建置流程。

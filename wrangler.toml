@@ -2,6 +2,7 @@ name = "resona-audio-studio"
 main = "worker/src/index.mjs"
 compatibility_date = "2026-10-20"
 workers_dev = false
+preview_urls = false
 
 # Root bindings intentionally target only the isolated preview database.
 # Never point this binding at RES's production `res` database.
@@ -11,15 +12,28 @@ database_name = "resona-audio-preview"
 database_id = "19ece3dd-79b5-42e0-8192-fc146ec732bb"
 migrations_dir = "worker/migrations"
 
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/audio/api/*"]
+
 [env.preview]
 name = "resona-audio-preview"
 workers_dev = false
+preview_urls = false
 
 [[env.preview.d1_databases]]
 binding = "AUDIO_DB"
 database_name = "resona-audio-preview"
 database_id = "19ece3dd-79b5-42e0-8192-fc146ec732bb"
 migrations_dir = "worker/migrations"
+
+[env.preview.assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/audio/api/*"]
 
 # This target must be the isolated RES identity bridge preview Worker, not the
 # production RES Worker. Do not deploy until that preview exists and is verified.

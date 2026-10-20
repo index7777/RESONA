@@ -1,6 +1,6 @@
 # RESONA × RES 下一步執行手冊（2026-10-20）
 
-> 狀態：**待執行清單**，不是已通過的測試或已部署服務。所有程式先留在 feature 分支。禁止直接部署正式 reslab.app、禁止在 RES 正式 D1 執行音訊 migration。
+> 狀態：以下是初始執行清單，最新進度見本文件末尾的「本機 QA 準備補記」。不是已部署服務。所有程式先留在 feature 分支。禁止直接部署正式 reslab.app、禁止在 RES 正式 D1 執行音訊 migration。
 
 ## 0. 現有分支、原始碼與責任
 
@@ -19,7 +19,7 @@
 2. RES 私人 Worker：只在專用 `resona-bridge-worker.mjs` 註冊 `/internal/resona/identity`；**絕不**掛到公開 `src/index.mjs`；設定 `workers_dev=false`、`preview_urls=false`、無 routes。
 3. RES 身分驗證：重用 `sessionTokenOf()`、`sessionUser()`，確認 banned_at / suspended_at 都拒絕。檢查裝置／IP 禁用政策是否要同步到 RESONA，若要同步，必須另定可驗證的原始請求來源，不能直接信任自報 IP。
 4. RESONA `api.mjs`：收到 authenticate 回傳值後也應執行 `requireVerifiedIdentity`，避免未來測試／替代 adapter 意外繞過驗證。
-5. RESONA `wallet.mjs`：目前只有預扣點，**沒有結算／退款**；禁止開放生成扣點路由。修正開頭舊的 D1 batch 註解，與 migration trigger 一致。
+5. RESONA `wallet.mjs`：預扣、成功結算、確定失敗退款與 unknown reconciliation 已有程式及 SQLite migration 測試；Cloudflare D1 實際交易語意仍待隔離環境驗收。付費旗標保持關閉。
 6. 確認 `/audio/api/me` 在未配置綁定時是 401，且無公開的內部身分端點。
 
 **驗收：** 程式碼審查確認沒有公開 introspection、沒有信任 browser userId、沒有圖片點數 SQL。
@@ -36,7 +36,7 @@ node --test tests/audio-wallet.test.mjs tests/audio-api.test.mjs tests/res-auth.
 npm run build
 ```
 
-以上命令是**待執行**，不是已通過。測試應補齊：無 Bearer、錯 Bearer、無 Cookie、過期/登出 Session、banned/suspended、缺 D1、偽造 userId、跨帳號讀取、重複請求、RES 影像點數不變。
+RES 的橋接測試仍待 RES repo 執行。RESONA 在 2026-10-20 已執行 `npm run test:audio`（25/25 pass）與 `npm run build`（pass）；另有 SQLite settlement/refund tests。真實 D1 與 RES 影像點數隔離仍待 Cloudflare preview 驗收。
 
 對 `0001_audio_wallet.sql` 另使用獨立 SQLite/D1 測試庫做交易整合測試：
 - 建立錢包 10 點；預扣 3 點後應為 7 點、1 job、1 reserve ledger。
@@ -52,7 +52,7 @@ npm run build
 - RES 私人橋接 Worker `res-resona-identity-bridge`：不綁公開 route；`DB` 指向**適當隔離的 RES 測試身分資料庫**，不要把正式 session 複製到測試環境；`RESONA_BRIDGE_KEY` 用 Cloudflare secret 設定。
 - RESONA 測試 Worker：`AUDIO_DB` 綁定獨立 Audio D1；`RES_AUTH` service binding 指向上方私人 Worker；`RES_BRIDGE_KEY` secret 必須與 RES 端一致。
 - 禁止把 secret 寫入 TOML、GitHub、PR 或測試 log。密鑰輪替需兩端同步。
-- RESONA Worker 的 Wrangler 設定檔**尚未建立**；先新增明確的 preview-only 設定，再執行部署。
+- RESONA `wrangler.toml` 已建立獨立 Audio D1、`RES_AUTH` service binding、`/audio/*` static assets 與 `/audio/api/*` worker-first 規則；Workers.dev 與 preview URLs 都明確關閉。不得在 RES bridge preview 尚未建立前部署。
 - RES 私人橋接 TOML 目前只有 skeleton，**尚缺 D1 binding**；在核對環境及資料庫 ID 後才補上。
 
 建議依序驗證：私人 Worker 不可從公開網址呼叫 → binding 可通 → 無 Cookie 401 → 有效 session 200 → 過期/登出/停權 401 → RESONA /me 與 /credits 正確。
@@ -80,3 +80,12 @@ RES 正式 Worker 使用 `reslab.app` custom domain，且 static assets fallback
 A. 完成 RES 身分橋接安全修正 + 單元測試；B. RESONA 身分 API 強制驗證 + 單元測試；C. Audio D1 交易整合測試；D. preview Wrangler 設定；E. Cloudflare preview 端對端驗證；F. /audio 路由及 OAuth 回跳；G. 付費點數結算/退款；H. AI provider 與前端。
 
 **本文件提交不代表上述工作已執行。**
+
+## 本機 QA 準備補記（2026-10-20）
+
+- Vite dev/build base 改為 `/audio/`，production build 輸出在 `dist/audio/`，對應 Cloudflare 靜態資產子路徑。
+- 加入僅限 Vite dev 的 `?audioDemo=1` 合成 WAV 流程，人工可檢查表單、SFX/BGM、變奏、播放器及下載元件，不會登入、呼叫 provider 或扣實際點數。production build 加相同 query 仍不能開啟 demo。
+- 修正非 JSON API 回應處理；Vite SPA fallback 的 HTML 不會再被誤當成有效會員/點數 API，正常模式在缺少 Worker 時會顯示不可用並停用生成。
+- 本機 Chrome/工作台畫面已檢查 `/audio/` production preview、demo variants 與一般模式 fail-closed 狀態。桌面/窄版正式 QA 仍由人工完成。
+- 一般本機 Wrangler dry-run 會因 Dockerfile Container image 要求 Docker；暫時停用 Container image build block 後，Wrangler package dry-run 已成功封裝 Worker、bindings 與 /audio 資產。預定 preview 用 Cloudflare Workers Builds 遠端建置，不需要本機 Docker。尚未部署或建立 route。
+- 尚需 owner/operator 建立及驗證 RES private bridge、測試用身分資料庫、真實 D1、OAuth/cookie/routing，並人工確認 provider 音質、權利、費用及下載。付費生成維持關閉。

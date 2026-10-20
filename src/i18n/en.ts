@@ -119,6 +119,8 @@ export const en = {
   'ai.eyebrow': 'Natural sound, composed for your scene',
   'ai.title': 'AI Audio Studio',
   'ai.credits': 'Audio Credits',
+  'ai.demoMode': 'Local QA demo: synthetic 3.5-second test audio. No login, provider call, or real credits.',
+  'ai.demoComplete': 'Local demo complete. This synthetic test audio does not represent AI output quality.',
   'ai.type': 'Audio type',
   'ai.sfx': 'Sound effect',
   'ai.bgm': 'Background music',
