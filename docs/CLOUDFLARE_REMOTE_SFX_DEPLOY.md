@@ -18,7 +18,8 @@
 - Cloudflare 已建立 `res-auth-bridge-preview`，只綁隔離 D1；目前沒有公開 URL 或路由。
 - Cloudflare Workers Builds 已建立 `resona-audio-preview` 專案，來源 `index7777/RESONA`，Production branch 已選 `feature/ai-audio-studio`，Build command 為 `npm ci && npm run build`，Deploy command 為 `npm run deploy:audio-preview`，Root directory 為 `/`。
 - 第一次初始化 Build 使用預設 `main`：前端建置成功，Deploy 因 main 尚無 `deploy:audio-preview` script 而停止，沒有建立 `/audio` 路由。之後已把 Production branch 改成音效功能分支。
-- Cloudflare 顯示 GitHub repository connection disconnected。按 Manage 會要求 GitHub sudo re-authentication；必須由帳戶持有人在 Chrome 完成驗證，Build 才能穩定讀取分支與接收 push。
+- GitHub sudo re-authentication 已由帳戶持有人完成；Cloudflare Workers and Pages GitHub App 現在只選取 `50cut` 和 `RESONA` 兩個 repository（未開啟 All repositories），並保留原先列出的 App 權限。2026-10-21 更新後 Cloudflare 專案不再顯示 disconnected 警告。
+- 目前唯一 Cloudflare build 記錄仍是初次使用 `main` 觸發的失敗紀錄；需以新 push 觸發 `feature/ai-audio-studio` Build，確認 Cloudflare clone 是否恢復正常以及遠端 Container image build 是否成功。
 - Audio Worker 尚未成功部署；`RES_BRIDGE_KEY` 尚未加到 Audio Worker。正式 `reslab.app` 的 RES Worker、網域與 routes 均未更動。
 
 ## Cloudflare Workers Builds 設定
