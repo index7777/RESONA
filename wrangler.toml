@@ -53,7 +53,9 @@ scheduling_policy = "durable_object"
 
 [env.preview.containers.images.base]
 dockerfile = "./worker/sfx-inference/Dockerfile"
-build_context = "."
+# Keep the Docker build context beside app.py so `COPY app.py` resolves in the
+# Cloudflare remote image build. Docker never runs on the developer machine.
+build_context = "./worker/sfx-inference"
 
 [[env.preview.durable_objects.bindings]]
 name = "SFX_CONTAINER"

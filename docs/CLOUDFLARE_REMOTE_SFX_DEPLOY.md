@@ -19,7 +19,8 @@
 - Cloudflare Workers Builds 已建立 `resona-audio-preview` 專案，來源 `index7777/RESONA`，Production branch 已選 `feature/ai-audio-studio`，Build command 為 `npm ci && npm run build`，Deploy command 為 `npm run deploy:audio-preview`，Root directory 為 `/`。
 - 第一次初始化 Build 使用預設 `main`：前端建置成功，Deploy 因 main 尚無 `deploy:audio-preview` script 而停止，沒有建立 `/audio` 路由。之後已把 Production branch 改成音效功能分支。
 - GitHub sudo re-authentication 已由帳戶持有人完成；Cloudflare Workers and Pages GitHub App 現在只選取 `50cut` 和 `RESONA` 兩個 repository（未開啟 All repositories），並保留原先列出的 App 權限。2026-10-21 更新後 Cloudflare 專案不再顯示 disconnected 警告。
-- 目前唯一 Cloudflare build 記錄仍是初次使用 `main` 觸發的失敗紀錄；需以新 push 觸發 `feature/ai-audio-studio` Build，確認 Cloudflare clone 是否恢復正常以及遠端 Container image build 是否成功。
+- `feature/ai-audio-studio` 的 Cloudflare Build `0b2c2122-0a46-43ac-8b58-5668038f5289` 已成功 clone、install 和前端 build，並進入遠端 Container image build；失敗原因是 Docker context 在 repo root，Container Dockerfile 的 `COPY app.py` 找不到 `worker/sfx-inference/app.py`。已把 `env.preview.containers.images.base.build_context` 改為 `./worker/sfx-inference`，等待下一次 push 驗證。
+- 下一次 push 觸發 Build 後，確認 Docker context 包含 `app.py`，遠端 image build、Wrangler deploy、D1/RES_AUTH bindings 均成功，再檢查 Worker URL/routes 仍關閉。
 - Audio Worker 尚未成功部署；`RES_BRIDGE_KEY` 尚未加到 Audio Worker。正式 `reslab.app` 的 RES Worker、網域與 routes 均未更動。
 
 ## Cloudflare Workers Builds 設定
