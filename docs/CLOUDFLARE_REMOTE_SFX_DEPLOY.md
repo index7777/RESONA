@@ -14,6 +14,15 @@
 
 ## Cloudflare 目前進度（2026-10-21）
 
+### 換電腦交接更新
+
+- GitHub repo：`https://github.com/index7777/RESONA.git`；工作分支 `feature/ai-audio-studio`；目前程式最新已推送 commit `f3b91d2`。另一台電腦 clone 後切到此分支即可接手，無須沿用舊電腦的資料夾路徑。
+- Workers Builds 已連接該 repo。Build command：`npm ci && npm run build`；Deploy command：`npm run deploy:audio-preview`。映像在 Cloudflare 遠端建置，不需本機 Docker。
+- 最新 build `bd7f9b82-d338-4217-849c-2efe5788fc75` 的前端及遠端 Container image 建置成功；Wrangler 發佈時 Cloudflare Containers API `/containers/me` 失敗。帳戶目前是 Workers Free；Containers 功能需要 Workers Paid。尚未升級，先由使用者決定月費預算，再繼續。
+- Workers Builds 使用的 token 名稱為 `RESONA Workers Builds`，僅有 Account Containers Edit、Account Workers Scripts Edit、`reslab.app` Workers Routes Edit。token 值不在 repo；不要將 token 值貼進文件、命令歷史或 Git。`yaoshen-chronicle build token` 是別的專案，不要選用或修改。
+- 尚無 Audio Worker 公開 URL、Preview URL、自訂網域或 route；正式 `res` Worker 和 `reslab.app` 路由沒有改動。目標仍是同品牌的 `reslab.app/audio`，需等 Preview 部署及人工 QA 通過後再處理。
+- 接手順序：先確認/核准 Workers Paid 費用；重跑 Cloudflare Build；在 Audio Worker 設定 `RES_BRIDGE_KEY`（沿用既有 bridge capability，勿輸出值）；確認 Preview D1 和 `RES_AUTH` 綁定；完成登入、Container 冷啟動、短音效生成、退款與費用 QA。模型條款/授權、實際 API 費用、點數政策未核准前，維持兩個生成旗標為 `false`，不設定 HF token、不開正式路由。
+
 - RES 最新分支 `feature/resona-auth-bridge` 已同步；Bearer capability 改為固定長度 XOR 比較並補測試，橋接測試 4/4 通過。提交 `d4dee19` 與隔離 D1 Wrangler 設定 `e28703a` 已推到該功能分支；RES `main` 未改。
 - Cloudflare 已建立 `res-auth-bridge-preview`，只綁隔離 D1；目前沒有公開 URL 或路由。
 - Cloudflare Workers Builds 已建立 `resona-audio-preview` 專案，來源 `index7777/RESONA`，Production branch 已選 `feature/ai-audio-studio`，Build command 為 `npm ci && npm run build`，Deploy command 為 `npm run deploy:audio-preview`，Root directory 為 `/`。

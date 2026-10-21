@@ -198,6 +198,16 @@ Begin Phase 0 with **read-only source inspection**. Produce exact integration po
 
 ## Current Cloudflare handoff — 2026-10-21
 
+### Handoff for switching computers — 2026-10-21
+
+- Repository: `https://github.com/index7777/RESONA.git`; continue on `feature/ai-audio-studio`. Latest pushed application commit at this checkpoint: `f3b91d2` (`fix(cloudflare): retry model package downloads`). Clone the repository and check out this branch on the next computer; the workspace path is machine-specific.
+- Cloudflare Workers Builds is connected to this repository and branch. Remote build command is `npm ci && npm run build`; deploy command is `npm run deploy:audio-preview`. No local Docker installation is needed.
+- Latest Cloudflare build `bd7f9b82-d338-4217-849c-2efe5788fc75` passed the frontend build and built the Container image after adding pip retries/timeouts. Wrangler deploy then failed at the Cloudflare Containers API (`/containers/me`). The account is currently on Workers Free; Containers require Workers Paid. Do not upgrade without the user's monthly budget approval.
+- Do not confuse the unrelated `yaoshen-chronicle build token` with this project. The selected Workers Builds token is `RESONA Workers Builds`, scoped to Account Containers Edit, Account Workers Scripts Edit, and `reslab.app` Workers Routes Edit. The token value is secret and is not stored in this repository. Do not replace or expose it.
+- The `resona-audio-preview` Worker has no public `workers.dev` URL, Preview URL, custom domain, or route. Production `res` Worker and `reslab.app` routing are unchanged. The intended branded destination is `reslab.app/audio`, but configure it only after preview deployment and human QA.
+- Next steps: (1) review/approve Workers Paid monthly cost, (2) rerun the Cloudflare Build after plan change, (3) set `RES_BRIDGE_KEY` on the Audio Worker to the existing bridge capability without logging it, (4) check isolated D1 and bridge bindings, then perform gated manual QA. Keep both generation flags false until model access/license, provider pricing, credit policy, and QA are approved. No HF token or model weights have been added.
+- Earlier dated notes below are historical snapshots; use this handoff and the linked deployment runbook for current state.
+
 This checkpoint supersedes earlier dated statements below that said no identity bridge had been deployed. The detailed operator runbook is [CLOUDFLARE_REMOTE_SFX_DEPLOY.md](CLOUDFLARE_REMOTE_SFX_DEPLOY.md); manual product review steps are in [MANUAL_QA_HANDOFF.md](MANUAL_QA_HANDOFF.md).
 
 ### Completed
